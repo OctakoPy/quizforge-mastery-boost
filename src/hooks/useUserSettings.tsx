@@ -24,6 +24,8 @@ export const useUserSettings = () => {
     queryFn: async () => {
       if (!user) return null;
 
+      console.log('Fetching settings for user:', user.id);
+
       const { data, error } = await supabase
         .from('user_settings')
         .select('*')
@@ -31,11 +33,16 @@ export const useUserSettings = () => {
         .single();
 
       if (error && error.code === 'PGRST116') {
-        // No settings found, return null
+        console.log('No settings found for user, returning null');
         return null;
       }
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching settings:', error);
+        throw error;
+      }
+      
+      console.log('Settings fetched successfully:', data);
       return data;
     },
     enabled: !!user
@@ -43,7 +50,12 @@ export const useUserSettings = () => {
 
   const updateSettings = useMutation({
     mutationFn: async (updates: { gemini_api_key?: string }) => {
-      if (!user) throw new Error('User not authenticated');
+      if (!user) {
+        console.error('User not authenticated');
+        throw new Error('User not authenticated');
+      }
+
+      console.log('Updating settings for user:', user.id, 'with updates:', updates);
 
       const { data, error } = await supabase
         .from('user_settings')
@@ -55,11 +67,20 @@ export const useUserSettings = () => {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error updating settings:', error);
+        throw error;
+      }
+      
+      console.log('Settings updated successfully:', data);
       return data;
     },
     onSuccess: () => {
+      console.log('Settings update successful, invalidating queries');
       queryClient.invalidateQueries({ queryKey: ['user-settings'] });
+    },
+    onError: (error) => {
+      console.error('Settings update failed:', error);
     }
   });
 
