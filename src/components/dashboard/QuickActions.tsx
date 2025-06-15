@@ -1,7 +1,7 @@
 
-import { Upload, BarChart3, FolderOpen, Settings } from 'lucide-react';
+import { Upload, Play, FileText, BarChart3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import UserSettingsDialog from '@/components/UserSettingsDialog';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface Subject {
   id: string;
@@ -19,44 +19,54 @@ interface QuickActionsProps {
   onUpload: () => void;
   onQuiz: () => void;
   onDocuments: () => void;
+  onStatistics: () => void;
 }
 
-const QuickActions = ({ subjects, totalQuestions, onUpload, onQuiz, onDocuments }: QuickActionsProps) => {
+const QuickActions = ({ subjects, totalQuestions, onUpload, onQuiz, onDocuments, onStatistics }: QuickActionsProps) => {
   return (
-    <div className="flex flex-wrap gap-4">
-      <Button 
-        onClick={onUpload}
-        className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800"
-      >
-        <Upload className="mr-2 h-4 w-4" />
-        Upload Document
-      </Button>
-      <Button 
-        variant="outline"
-        onClick={onQuiz}
-        className="border-2 border-green-200 hover:bg-green-50"
-        disabled={subjects.length === 0 || totalQuestions === 0}
-      >
-        <BarChart3 className="mr-2 h-4 w-4" />
-        Take Quiz
-      </Button>
-      <Button 
-        variant="outline"
-        onClick={onDocuments}
-        className="border-2 border-purple-200 hover:bg-purple-50"
-      >
-        <FolderOpen className="mr-2 h-4 w-4" />
-        Manage Documents
-      </Button>
-      <UserSettingsDialog 
-        trigger={
-          <Button variant="outline">
-            <Settings className="mr-2 h-4 w-4" />
-            Settings
+    <Card>
+      <CardHeader>
+        <CardTitle>Quick Actions</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <Button
+            onClick={onUpload}
+            className="h-20 flex-col space-y-2 bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700"
+          >
+            <Upload className="h-6 w-6" />
+            <span>Upload Quiz</span>
           </Button>
-        }
-      />
-    </div>
+
+          <Button
+            onClick={onQuiz}
+            disabled={totalQuestions === 0}
+            className="h-20 flex-col space-y-2 bg-gradient-to-br from-green-500 to-green-600 hover:from-green-600 hover:to-green-700"
+          >
+            <Play className="h-6 w-6" />
+            <span>Start Quiz</span>
+          </Button>
+
+          <Button
+            onClick={onDocuments}
+            variant="outline"
+            className="h-20 flex-col space-y-2"
+          >
+            <FileText className="h-6 w-6" />
+            <span>Manage Quizzes</span>
+          </Button>
+
+          <Button
+            onClick={onStatistics}
+            variant="outline"
+            className="h-20 flex-col space-y-2"
+          >
+            <BarChart3 className="h-6 w-6" />
+            <span>Statistics</span>
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
   );
 };
 

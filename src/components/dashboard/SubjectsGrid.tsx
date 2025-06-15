@@ -1,4 +1,3 @@
-
 import { BookOpen, Upload, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -19,10 +18,11 @@ interface SubjectsGridProps {
   subjects: Subject[];
   isLoading: boolean;
   onStartQuiz: (subjectId: string) => void;
+  onStartMegaQuiz: (subjectId: string) => void;
   onUpload: () => void;
 }
 
-const SubjectsGrid = ({ subjects, isLoading, onStartQuiz, onUpload }: SubjectsGridProps) => {
+const SubjectsGrid = ({ subjects, isLoading, onStartQuiz, onStartMegaQuiz, onUpload }: SubjectsGridProps) => {
   if (isLoading) {
     return (
       <div className="text-center py-8">
@@ -63,6 +63,7 @@ const SubjectsGrid = ({ subjects, isLoading, onStartQuiz, onUpload }: SubjectsGr
           key={subject.id}
           subject={subject}
           onStartQuiz={() => onStartQuiz(subject.id)}
+          onStartMegaQuiz={() => onStartMegaQuiz(subject.id)}
         />
       ))}
     </div>

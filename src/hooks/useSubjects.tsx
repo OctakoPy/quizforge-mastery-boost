@@ -96,11 +96,61 @@ export const useSubjects = () => {
     }
   });
 
+  const deleteSubject = useMutation({
+    mutationFn: async (subjectId: string) => {
+      if (!user) throw new Error('User not authenticated');
+
+      // First delete all quiz attempts for this subject
+      const { error: attemptsError } = await supabase
+        .from('quiz_attempts')
+        .delete()
+        .eq('subject_id', subjectId)
+        .eq('user_id', user.id);
+
+      if (attemptsError) throw attemptsError;
+
+      // Then delete all questions for this subject
+      const { error: questionsError } = await supabase
+        .from('questions')
+        .delete()
+        .eq('subject_id', subjectId)
+        .eq('user_id', user.id);
+
+      if (questionsError) throw questionsError;
+
+      // Then delete all documents for this subject
+      const { error: documentsError } = await supabase
+        .from('documents')
+        .delete()
+        .eq('subject_id', subjectId)
+        .eq('user_id', user.id);
+
+      if (documentsError) throw documentsError;
+
+      // Finally delete the subject itself
+      const { error: subjectError } = await supabase
+        .from('subjects')
+        .delete()
+        .eq('id', subjectId)
+        .eq('user_id', user.id);
+
+      if (subjectError) throw subjectError;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['subjects'] });
+      queryClient.invalidateQueries({ queryKey: ['documents'] });
+      queryClient.invalidateQueries({ queryKey: ['questions'] });
+      queryClient.invalidateQueries({ queryKey: ['statistics'] });
+    }
+  });
+
   return {
     subjects,
     isLoading,
     error,
     createSubject: createSubject.mutateAsync,
-    isCreating: createSubject.isPending
+    isCreating: createSubject.isPending,
+    deleteSubject: deleteSubject.mutateAsync,
+    isDeleting: deleteSubject.isPending
   };
 };

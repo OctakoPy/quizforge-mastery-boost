@@ -21,9 +21,11 @@ interface QuizInterfaceProps {
   subjects: Subject[];
   selectedSubject: string | null;
   onBack: () => void;
+  megaQuestions?: Question[];
+  isMegaQuiz?: boolean;
 }
 
-const QuizInterface = ({ subjects, selectedSubject, onBack }: QuizInterfaceProps) => {
+const QuizInterface = ({ subjects, selectedSubject, onBack, megaQuestions, isMegaQuiz = false }: QuizInterfaceProps) => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<string>('');
   const [userAnswers, setUserAnswers] = useState<number[]>([]);
@@ -31,7 +33,11 @@ const QuizInterface = ({ subjects, selectedSubject, onBack }: QuizInterfaceProps
   const [quizStarted, setQuizStarted] = useState(false);
 
   const subject = selectedSubject ? subjects.find(s => s.id === selectedSubject) : subjects[0];
-  const { questions, isLoading } = useQuestions(selectedSubject || undefined);
+  const { questions: normalQuestions, isLoading: isNormalLoading } = useQuestions(selectedSubject || undefined);
+  
+  // Use mega questions if provided, otherwise use normal questions
+  const questions = isMegaQuiz ? (megaQuestions || []) : normalQuestions;
+  const isLoading = isMegaQuiz ? false : isNormalLoading;
 
   const handleAnswerSelect = (value: string) => {
     setSelectedAnswer(value);
@@ -75,7 +81,7 @@ const QuizInterface = ({ subjects, selectedSubject, onBack }: QuizInterfaceProps
     );
   }
 
-  if (questions.length === 0) {
+  if (questions.length === 0 && !isLoading) {
     return (
       <div className="max-w-2xl mx-auto">
         <div className="mb-6">
@@ -90,10 +96,10 @@ const QuizInterface = ({ subjects, selectedSubject, onBack }: QuizInterfaceProps
             <h3 className="text-lg font-semibold text-gray-900 mb-2">No questions available</h3>
             <p className="text-gray-600 mb-4">
               {subject?.name ? `No questions found for ${subject.name}.` : 'No questions found for this subject.'} 
-              Upload some documents to generate questions!
+              Upload some quizzes to get started!
             </p>
             <Button onClick={onBack}>
-              Upload Documents
+              Upload Quizzes
             </Button>
           </CardContent>
         </Card>

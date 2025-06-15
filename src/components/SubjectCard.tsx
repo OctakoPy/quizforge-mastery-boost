@@ -1,8 +1,12 @@
 
-import { FileText, Target, Calendar, ArrowRight } from 'lucide-react';
+import { FileText, Target, Calendar, ArrowRight, Trash2, Play } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { useSubjects } from '@/hooks/useSubjects';
+import { useToast } from '@/hooks/use-toast';
+import { useState } from 'react';
 
 interface Subject {
   id: string;
@@ -17,9 +21,33 @@ interface Subject {
 interface SubjectCardProps {
   subject: Subject;
   onStartQuiz: () => void;
+  onStartMegaQuiz?: () => void;
 }
 
-const SubjectCard = ({ subject, onStartQuiz }: SubjectCardProps) => {
+const SubjectCard = ({ subject, onStartQuiz, onStartMegaQuiz }: SubjectCardProps) => {
+  const [isDeleting, setIsDeleting] = useState(false);
+  const { deleteSubject } = useSubjects();
+  const { toast } = useToast();
+
+  const handleDelete = async () => {
+    try {
+      setIsDeleting(true);
+      await deleteSubject(subject.id);
+      toast({
+        title: "Subject deleted",
+        description: `"${subject.name}" and all its quizzes have been removed.`
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete subject. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   const getMasteryColor = (score: number) => {
     if (score >= 80) return 'text-green-600';
     if (score >= 60) return 'text-yellow-600';
@@ -42,21 +70,51 @@ const SubjectCard = ({ subject, onStartQuiz }: SubjectCardProps) => {
               {subject.name}
             </h3>
           </div>
-          <Button
-            onClick={onStartQuiz}
-            size="sm"
-            variant="ghost"
-            className="opacity-0 group-hover:opacity-100 transition-opacity"
-          >
-            <ArrowRight className="h-4 w-4" />
-          </Button>
+          <div className="flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            <Button
+              onClick={onStartQuiz}
+              size="sm"
+              variant="ghost"
+            >
+              <ArrowRight className="h-4 w-4" />
+            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                  disabled={isDeleting}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete Subject</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Are you sure you want to delete "{subject.name}"? This will permanently remove the subject and all its quizzes, questions, and quiz attempts. This action cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={handleDelete}
+                    className="bg-red-600 hover:bg-red-700"
+                  >
+                    Delete
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
         </div>
 
         <div className="space-y-4">
           <div className="flex items-center justify-between text-sm text-gray-600">
             <div className="flex items-center space-x-1">
               <FileText className="h-4 w-4" />
-              <span>{subject.documentCount} docs</span>
+              <span>{subject.documentCount} quizzes</span>
             </div>
             <div className="flex items-center space-x-1">
               <Target className="h-4 w-4" />
@@ -87,12 +145,25 @@ const SubjectCard = ({ subject, onStartQuiz }: SubjectCardProps) => {
           </div>
         </div>
 
-        <Button
-          onClick={onStartQuiz}
-          className="w-full mt-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-        >
-          Start Quiz
-        </Button>
+        <div className="flex space-x-2 mt-4">
+          <Button
+            onClick={onStartQuiz}
+            className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+          >
+            <ArrowRight className="mr-2 h-4 w-4" />
+            Start Quiz
+          </Button>
+          {subject.documentCount > 1 && (
+            <Button
+              onClick={onStartMegaQuiz}
+              variant="outline"
+              className="flex-1"
+            >
+              <Play className="mr-2 h-4 w-4" />
+              Mega Quiz
+            </Button>
+          )}
+        </div>
       </CardContent>
     </Card>
   );
