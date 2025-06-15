@@ -139,37 +139,6 @@ const StatisticsDashboard = () => {
         </CardContent>
       </Card>
 
-      {/* Recent Activity */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Recent Activity</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {overallStatistics.recentActivity.length === 0 ? (
-            <div className="text-center py-4 text-gray-500">
-              <p>No recent activity. Complete some quizzes to see your progress!</p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {overallStatistics.recentActivity.slice(0, 10).map((activity, index) => (
-                <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div>
-                    <p className="font-medium">{activity.quizName}</p>
-                    <p className="text-sm text-gray-600">{activity.subjectName}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className={`font-bold ${getMasteryColor(activity.score)}`}>{activity.score}%</p>
-                    <p className="text-xs text-gray-500">
-                      {format(parseISO(activity.date), 'MMM dd, HH:mm')}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
       {/* Quiz Performance */}
       <Card>
         <CardHeader>
