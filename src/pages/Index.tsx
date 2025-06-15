@@ -7,6 +7,7 @@ import Header from '@/components/Header';
 import SubjectCard from '@/components/SubjectCard';
 import DocumentUpload from '@/components/DocumentUpload';
 import QuizInterface from '@/components/QuizInterface';
+import AddSubjectDialog from '@/components/AddSubjectDialog';
 import { useSubjects } from '@/hooks/useSubjects';
 
 const Index = () => {
@@ -99,10 +100,7 @@ const Index = () => {
       <div>
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-bold text-gray-900">Your Subjects</h2>
-          <Button variant="outline" size="sm">
-            <Plus className="mr-2 h-4 w-4" />
-            Add Subject
-          </Button>
+          <AddSubjectDialog />
         </div>
         
         {isLoading ? (
@@ -126,10 +124,7 @@ const Index = () => {
                   <Upload className="mr-2 h-4 w-4" />
                   Upload Document
                 </Button>
-                <Button variant="outline">
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add Subject
-                </Button>
+                <AddSubjectDialog />
               </div>
             </CardContent>
           </Card>

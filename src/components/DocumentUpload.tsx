@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import AddSubjectDialog from '@/components/AddSubjectDialog';
 
 interface Subject {
   id: string;
@@ -33,6 +34,12 @@ const DocumentUpload = ({ subjects, onBack }: DocumentUploadProps) => {
     if (file && file.type === 'application/pdf') {
       setSelectedFile(file);
     }
+  };
+
+  const handleSubjectCreated = (subjectId: string) => {
+    // When a new subject is created, we'll need to refresh the subjects list
+    // For now, we'll just clear the selection to force user to reselect
+    setSelectedSubject('');
   };
 
   const handleGenerate = async () => {
@@ -99,18 +106,34 @@ const DocumentUpload = ({ subjects, onBack }: DocumentUploadProps) => {
           <CardContent className="space-y-4">
             <div>
               <Label htmlFor="subject">Subject</Label>
-              <Select value={selectedSubject} onValueChange={setSelectedSubject}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a subject" />
-                </SelectTrigger>
-                <SelectContent>
-                  {subjects.map((subject) => (
-                    <SelectItem key={subject.id} value={subject.id}>
-                      {subject.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="flex gap-2 mt-1">
+                <Select value={selectedSubject} onValueChange={setSelectedSubject}>
+                  <SelectTrigger className="flex-1">
+                    <SelectValue placeholder="Select a subject" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {subjects.map((subject) => (
+                      <SelectItem key={subject.id} value={subject.id}>
+                        <div className="flex items-center space-x-2">
+                          <div className={`w-3 h-3 rounded-full ${subject.color}`}></div>
+                          <span>{subject.name}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <AddSubjectDialog 
+                  onSubjectCreated={handleSubjectCreated}
+                  trigger={
+                    <Button variant="outline" size="icon">
+                      <Sparkles className="h-4 w-4" />
+                    </Button>
+                  }
+                />
+              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                Select an existing subject or create a new one
+              </p>
             </div>
 
             <div>

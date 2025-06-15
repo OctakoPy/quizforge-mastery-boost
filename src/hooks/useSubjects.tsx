@@ -100,7 +100,7 @@ export const useSubjects = () => {
     subjects,
     isLoading,
     error,
-    createSubject: createSubject.mutate,
+    createSubject: createSubject.mutateAsync,
     isCreating: createSubject.isPending
   };
 };
