@@ -1,12 +1,11 @@
-import { FileText, Target, Calendar, ArrowRight, Trash2, Play, ChevronDown } from 'lucide-react';
+
+import { ArrowRight, Trash2, Play } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useSubjects } from '@/hooks/useSubjects';
 import { useToast } from '@/hooks/use-toast';
-import { useDocuments } from '@/hooks/useDocuments';
 import { useState } from 'react';
 
 interface Subject {
@@ -28,11 +27,7 @@ interface SubjectCardProps {
 const SubjectCard = ({ subject, onStartQuiz, onStartMegaQuiz }: SubjectCardProps) => {
   const [isDeleting, setIsDeleting] = useState(false);
   const { deleteSubject } = useSubjects();
-  const { documents } = useDocuments();
   const { toast } = useToast();
-
-  // Get documents for this subject
-  const subjectDocuments = documents.filter(doc => doc.subject_id === subject.id);
 
   const handleDelete = async () => {
     try {
@@ -65,34 +60,17 @@ const SubjectCard = ({ subject, onStartQuiz, onStartMegaQuiz }: SubjectCardProps
     return 'bg-red-500';
   };
 
-  const handleQuizStart = () => {
-    if (subjectDocuments.length === 1) {
-      // If only one quiz, start it directly
-      onStartQuiz(subjectDocuments[0].id);
-    } else {
-      // If multiple quizzes, let parent component handle quiz selection
-      onStartQuiz();
-    }
-  };
-
   return (
     <Card className="group hover:shadow-lg transition-all duration-300 hover:-translate-y-1 border-2 hover:border-blue-200">
       <CardContent className="p-6">
         <div className="flex items-start justify-between mb-4">
           <div className="flex items-center space-x-3">
             <div className={`w-3 h-3 rounded-full ${subject.color}`}></div>
-            <h3 className="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
+            <h3 className="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors text-lg">
               {subject.name}
             </h3>
           </div>
           <div className="flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
-            <Button
-              onClick={handleQuizStart}
-              size="sm"
-              variant="ghost"
-            >
-              <ArrowRight className="h-4 w-4" />
-            </Button>
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button
@@ -126,73 +104,49 @@ const SubjectCard = ({ subject, onStartQuiz, onStartMegaQuiz }: SubjectCardProps
         </div>
 
         <div className="space-y-4">
-          <div className="flex items-center justify-between text-sm text-gray-600">
-            <div className="flex items-center space-x-1">
-              <FileText className="h-4 w-4" />
-              <span>{subject.documentCount} quizzes</span>
+          <div className="text-center">
+            <div className="text-sm text-gray-600 mb-1">
+              {subject.documentCount} {subject.documentCount === 1 ? 'Quiz' : 'Quizzes'}
             </div>
-            <div className="flex items-center space-x-1">
-              <Target className="h-4 w-4" />
-              <span>{subject.questionCount} questions</span>
-            </div>
-          </div>
-
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-gray-700">Mastery</span>
-              <span className={`text-sm font-bold ${getMasteryColor(subject.masteryScore)}`}>
-                {subject.masteryScore}%
-              </span>
-            </div>
-            <div className="w-full bg-gray-200 rounded-full h-2">
-              <div
-                className={`h-2 rounded-full transition-all duration-500 ${getMasteryProgressColor(subject.masteryScore)}`}
-                style={{ width: `${subject.masteryScore}%` }}
-              ></div>
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between text-xs text-gray-500">
-            <div className="flex items-center space-x-1">
-              <Calendar className="h-3 w-3" />
-              <span>Last studied {subject.lastStudied}</span>
+            <div>
+              <div className="flex items-center justify-center mb-2">
+                <span className={`text-2xl font-bold ${getMasteryColor(subject.masteryScore)}`}>
+                  {subject.masteryScore}%
+                </span>
+              </div>
+              <div className="text-sm text-gray-600 mb-2">Overall Mastery</div>
+              <div className="w-full bg-gray-200 rounded-full h-2">
+                <div
+                  className={`h-2 rounded-full transition-all duration-500 ${getMasteryProgressColor(subject.masteryScore)}`}
+                  style={{ width: `${subject.masteryScore}%` }}
+                ></div>
+              </div>
             </div>
           </div>
         </div>
 
-        <div className="flex space-x-2 mt-4">
-          {subjectDocuments.length === 1 ? (
-            <Button
-              onClick={handleQuizStart}
-              className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-            >
-              <ArrowRight className="mr-2 h-4 w-4" />
-              Start Quiz
-            </Button>
-          ) : subjectDocuments.length > 1 ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
+        <div className="flex space-x-2 mt-6">
+          {subject.documentCount > 0 ? (
+            <>
+              <Button
+                onClick={() => onStartQuiz()}
+                className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+              >
+                <ArrowRight className="mr-2 h-4 w-4" />
+                Choose Quiz
+              </Button>
+              
+              {subject.documentCount > 1 && (
                 <Button
-                  className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                  onClick={onStartMegaQuiz}
+                  variant="outline"
+                  className="flex-1"
                 >
-                  <ArrowRight className="mr-2 h-4 w-4" />
-                  Choose Quiz
-                  <ChevronDown className="ml-2 h-4 w-4" />
+                  <Play className="mr-2 h-4 w-4" />
+                  Mega Quiz
                 </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-64 bg-white">
-                {subjectDocuments.map((doc) => (
-                  <DropdownMenuItem
-                    key={doc.id}
-                    onClick={() => onStartQuiz(doc.id)}
-                    className="cursor-pointer hover:bg-gray-100"
-                  >
-                    <FileText className="mr-2 h-4 w-4" />
-                    {doc.name}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
+              )}
+            </>
           ) : (
             <Button
               disabled
@@ -200,17 +154,6 @@ const SubjectCard = ({ subject, onStartQuiz, onStartMegaQuiz }: SubjectCardProps
             >
               <ArrowRight className="mr-2 h-4 w-4" />
               No Quizzes
-            </Button>
-          )}
-          
-          {subject.documentCount > 1 && (
-            <Button
-              onClick={onStartMegaQuiz}
-              variant="outline"
-              className="flex-1"
-            >
-              <Play className="mr-2 h-4 w-4" />
-              Mega Quiz
             </Button>
           )}
         </div>

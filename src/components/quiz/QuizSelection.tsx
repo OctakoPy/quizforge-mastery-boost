@@ -1,9 +1,12 @@
 
-import { ArrowLeft, FileText, Target } from 'lucide-react';
+import { ArrowLeft, FileText, Target, Calendar, Trophy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
 import { useDocuments } from '@/hooks/useDocuments';
 import { useQuestions } from '@/hooks/useQuestions';
+import { useStatistics } from '@/hooks/useStatistics';
+import { format, parseISO } from 'date-fns';
 
 interface Subject {
   id: string;
@@ -23,6 +26,7 @@ interface QuizSelectionProps {
 
 const QuizSelection = ({ subject, onBack, onQuizSelect }: QuizSelectionProps) => {
   const { documents } = useDocuments();
+  const { statistics } = useStatistics();
   
   // Get documents for this subject
   const subjectDocuments = documents.filter(doc => doc.subject_id === subject.id && doc.processed);
@@ -43,6 +47,7 @@ const QuizSelection = ({ subject, onBack, onQuizSelect }: QuizSelectionProps) =>
           <QuizCard
             key={document.id}
             document={document}
+            statistics={statistics}
             onSelect={() => onQuizSelect(document.id)}
           />
         ))}
@@ -53,11 +58,38 @@ const QuizSelection = ({ subject, onBack, onQuizSelect }: QuizSelectionProps) =>
 
 interface QuizCardProps {
   document: any;
+  statistics: any;
   onSelect: () => void;
 }
 
-const QuizCard = ({ document, onSelect }: QuizCardProps) => {
+const QuizCard = ({ document, statistics, onSelect }: QuizCardProps) => {
   const { questions } = useQuestions(undefined, document.id);
+  
+  // Find quiz statistics for this specific document
+  const quizStats = statistics?.quizStatistics?.find(
+    (quiz: any) => quiz.quizId === document.id
+  );
+
+  const getMasteryColor = (score: number) => {
+    if (score >= 80) return 'text-green-600';
+    if (score >= 60) return 'text-yellow-600';
+    return 'text-red-500';
+  };
+
+  const getMasteryProgressColor = (score: number) => {
+    if (score >= 80) return 'bg-green-500';
+    if (score >= 60) return 'bg-yellow-500';
+    return 'bg-red-500';
+  };
+
+  const formatLastStudied = (dateString: string | null) => {
+    if (!dateString) return 'Never';
+    try {
+      return format(parseISO(dateString), 'MMM dd, yyyy');
+    } catch {
+      return 'Never';
+    }
+  };
   
   return (
     <Card className="hover:shadow-lg transition-all duration-300 hover:-translate-y-1 border-2 hover:border-blue-200 cursor-pointer">
@@ -68,15 +100,48 @@ const QuizCard = ({ document, onSelect }: QuizCardProps) => {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="flex items-center justify-between text-sm text-gray-600">
-          <div className="flex items-center space-x-1">
-            <Target className="h-4 w-4" />
-            <span>{questions.length} questions</span>
+        <div className="grid grid-cols-2 gap-4 text-sm">
+          <div className="flex items-center space-x-2">
+            <Target className="h-4 w-4 text-gray-600" />
+            <span className="text-gray-600">{questions.length} questions</span>
           </div>
-          <div className="text-xs text-gray-500">
-            Uploaded {new Date(document.upload_date).toLocaleDateString()}
+          <div className="flex items-center space-x-2">
+            <Calendar className="h-4 w-4 text-gray-600" />
+            <span className="text-gray-600 text-xs">
+              {formatLastStudied(quizStats?.lastAttempted)}
+            </span>
           </div>
         </div>
+
+        {quizStats && (
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <Trophy className="h-4 w-4 text-orange-600" />
+                <span className="text-sm font-medium text-gray-700">Mastery</span>
+              </div>
+              <span className={`text-sm font-bold ${getMasteryColor(quizStats.averageScore)}`}>
+                {quizStats.averageScore}%
+              </span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-2">
+              <div
+                className={`h-2 rounded-full transition-all duration-500 ${getMasteryProgressColor(quizStats.averageScore)}`}
+                style={{ width: `${quizStats.averageScore}%` }}
+              ></div>
+            </div>
+            <div className="flex justify-between text-xs text-gray-500">
+              <span>Best: {quizStats.bestScore}%</span>
+              <span>{quizStats.totalAttempts} attempts</span>
+            </div>
+          </div>
+        )}
+
+        {!quizStats && (
+          <div className="text-center py-2">
+            <span className="text-sm text-gray-500">No attempts yet</span>
+          </div>
+        )}
         
         <Button
           onClick={onSelect}
