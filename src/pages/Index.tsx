@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { Upload, FileText, BookOpen, Trophy, Plus, ArrowRight, BarChart3, Clock, Target } from 'lucide-react';
+import { Upload, FileText, BookOpen, Trophy, Plus, ArrowRight, BarChart3, Clock, Target, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Header from '@/components/Header';
@@ -8,13 +8,16 @@ import SubjectCard from '@/components/SubjectCard';
 import DocumentUpload from '@/components/DocumentUpload';
 import QuizInterface from '@/components/QuizInterface';
 import AddSubjectDialog from '@/components/AddSubjectDialog';
+import UserSettingsDialog from '@/components/UserSettingsDialog';
 import { useSubjects } from '@/hooks/useSubjects';
+import { useUserSettings } from '@/hooks/useUserSettings';
 
 const Index = () => {
   const [activeView, setActiveView] = useState<'dashboard' | 'upload' | 'quiz'>('dashboard');
   const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
   
   const { subjects, isLoading } = useSubjects();
+  const { settings } = useUserSettings();
 
   // Calculate stats from real data
   const totalQuestions = subjects.reduce((sum, subject) => sum + (subject.questionCount || 0), 0);
@@ -25,6 +28,32 @@ const Index = () => {
 
   const renderDashboard = () => (
     <div className="space-y-8">
+      {/* Settings reminder */}
+      {!settings?.gemini_api_key && (
+        <Card className="border-orange-200 bg-orange-50">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-orange-800">
+                  Complete your setup to start generating questions
+                </p>
+                <p className="text-xs text-orange-600">
+                  Add your Gemini API key to enable AI-powered question generation.
+                </p>
+              </div>
+              <UserSettingsDialog 
+                trigger={
+                  <Button size="sm" className="bg-orange-600 hover:bg-orange-700">
+                    <Settings className="mr-2 h-4 w-4" />
+                    Add API Key
+                  </Button>
+                }
+              />
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Stats Overview */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
@@ -89,11 +118,19 @@ const Index = () => {
           variant="outline"
           onClick={() => setActiveView('quiz')}
           className="border-2 border-green-200 hover:bg-green-50"
-          disabled={subjects.length === 0}
+          disabled={subjects.length === 0 || totalQuestions === 0}
         >
           <BarChart3 className="mr-2 h-4 w-4" />
           Take Quiz
         </Button>
+        <UserSettingsDialog 
+          trigger={
+            <Button variant="outline">
+              <Settings className="mr-2 h-4 w-4" />
+              Settings
+            </Button>
+          }
+        />
       </div>
 
       {/* Subjects Grid */}

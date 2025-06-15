@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
+import { useQuestions } from '@/hooks/useQuestions';
 
 interface Subject {
   id: string;
@@ -23,13 +24,6 @@ interface QuizInterfaceProps {
   onBack: () => void;
 }
 
-interface Question {
-  id: string;
-  question: string;
-  options: string[];
-  correctAnswer: number;
-}
-
 const QuizInterface = ({ subjects, selectedSubject, onBack }: QuizInterfaceProps) => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<string>('');
@@ -37,29 +31,8 @@ const QuizInterface = ({ subjects, selectedSubject, onBack }: QuizInterfaceProps
   const [showResults, setShowResults] = useState(false);
   const [quizStarted, setQuizStarted] = useState(false);
 
-  // Mock quiz questions
-  const questions: Question[] = [
-    {
-      id: '1',
-      question: 'What is the time complexity of binary search?',
-      options: ['O(n)', 'O(log n)', 'O(n log n)', 'O(1)'],
-      correctAnswer: 1
-    },
-    {
-      id: '2',
-      question: 'Which data structure follows LIFO principle?',
-      options: ['Queue', 'Stack', 'Array', 'LinkedList'],
-      correctAnswer: 1
-    },
-    {
-      id: '3',
-      question: 'What does CPU stand for?',
-      options: ['Central Processing Unit', 'Computer Processing Unit', 'Core Processing Unit', 'Central Program Unit'],
-      correctAnswer: 0
-    }
-  ];
-
   const subject = selectedSubject ? subjects.find(s => s.id === selectedSubject) : subjects[0];
+  const { questions, isLoading } = useQuestions(selectedSubject || undefined);
 
   const handleAnswerSelect = (value: string) => {
     setSelectedAnswer(value);
@@ -80,7 +53,7 @@ const QuizInterface = ({ subjects, selectedSubject, onBack }: QuizInterfaceProps
 
   const calculateScore = () => {
     const correct = userAnswers.reduce((count, answer, index) => {
-      return count + (answer === questions[index].correctAnswer ? 1 : 0);
+      return count + (answer === questions[index].correct_answer ? 1 : 0);
     }, 0);
     return Math.round((correct / questions.length) * 100);
   };
@@ -92,6 +65,49 @@ const QuizInterface = ({ subjects, selectedSubject, onBack }: QuizInterfaceProps
     setShowResults(false);
     setQuizStarted(false);
   };
+
+  if (isLoading) {
+    return (
+      <div className="max-w-2xl mx-auto">
+        <div className="mb-6">
+          <Button onClick={onBack} variant="ghost" className="mb-4">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Dashboard
+          </Button>
+        </div>
+        <div className="text-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading questions...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (questions.length === 0) {
+    return (
+      <div className="max-w-2xl mx-auto">
+        <div className="mb-6">
+          <Button onClick={onBack} variant="ghost" className="mb-4">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Dashboard
+          </Button>
+        </div>
+        <Card>
+          <CardContent className="p-8 text-center">
+            <Target className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">No questions available</h3>
+            <p className="text-gray-600 mb-4">
+              {subject?.name ? `No questions found for ${subject.name}.` : 'No questions found for this subject.'} 
+              Upload some documents to generate questions!
+            </p>
+            <Button onClick={onBack}>
+              Upload Documents
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   if (!quizStarted) {
     return (
@@ -109,7 +125,7 @@ const QuizInterface = ({ subjects, selectedSubject, onBack }: QuizInterfaceProps
           <CardHeader>
             <CardTitle className="flex items-center">
               <Target className="mr-2 h-5 w-5" />
-              {subject?.name || 'Computer Science'} Quiz
+              {subject?.name || 'Quiz'} Quiz
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -148,7 +164,7 @@ const QuizInterface = ({ subjects, selectedSubject, onBack }: QuizInterfaceProps
   if (showResults) {
     const score = calculateScore();
     const correctAnswers = userAnswers.reduce((count, answer, index) => {
-      return count + (answer === questions[index].correctAnswer ? 1 : 0);
+      return count + (answer === questions[index].correct_answer ? 1 : 0);
     }, 0);
 
     return (
@@ -177,7 +193,7 @@ const QuizInterface = ({ subjects, selectedSubject, onBack }: QuizInterfaceProps
               <h3 className="font-semibold text-gray-900">Review:</h3>
               {questions.map((question, index) => {
                 const userAnswer = userAnswers[index];
-                const isCorrect = userAnswer === question.correctAnswer;
+                const isCorrect = userAnswer === question.correct_answer;
                 
                 return (
                   <div key={question.id} className="border rounded-lg p-4">
@@ -191,7 +207,7 @@ const QuizInterface = ({ subjects, selectedSubject, onBack }: QuizInterfaceProps
                     </div>
                     <div className="ml-7 space-y-1 text-sm">
                       <p className="text-green-600">
-                        ✓ Correct: {question.options[question.correctAnswer]}
+                        ✓ Correct: {question.options[question.correct_answer]}
                       </p>
                       {!isCorrect && (
                         <p className="text-red-500">
