@@ -5,6 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { useQuestions, Question } from '@/hooks/useQuestions';
 import { useWrongQuestions } from '@/hooks/useWrongQuestions';
 import { useStatistics } from '@/hooks/useStatistics';
+import { useDocuments } from '@/hooks/useDocuments';
 import QuizSetup from '@/components/quiz/QuizSetup';
 import QuizQuestion from '@/components/quiz/QuizQuestion';
 import QuizResults from '@/components/quiz/QuizResults';
@@ -37,6 +38,10 @@ const QuizInterface = ({ subjects, selectedSubject, selectedDocument, onBack, me
   const [quizType, setQuizType] = useState<'all' | 'wrong'>('all');
 
   const subject = selectedSubject ? subjects.find(s => s.id === selectedSubject) : subjects[0];
+  
+  // Get documents to find the document name
+  const { documents } = useDocuments();
+  const selectedDocumentData = selectedDocument ? documents.find(d => d.id === selectedDocument) : null;
   
   // Use different query based on whether we have a specific document or are doing a mega quiz
   const { questions: normalQuestions, isLoading: isNormalLoading } = useQuestions(
@@ -133,6 +138,7 @@ const QuizInterface = ({ subjects, selectedSubject, selectedDocument, onBack, me
     return (
       <QuizSetup
         subject={subject}
+        documentName={selectedDocumentData?.name}
         questionCount={normalQuestions.length}
         wrongQuestionCount={wrongQuestions.length}
         lastAttemptScore={getLastAttemptScore()}

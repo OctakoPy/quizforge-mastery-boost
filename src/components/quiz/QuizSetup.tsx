@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { ArrowLeft, Target, RotateCcw, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Target, RotateCcw, RefreshCw, Play } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -18,6 +18,7 @@ interface Subject {
 
 interface QuizSetupProps {
   subject: Subject | undefined;
+  documentName?: string;
   questionCount: number;
   wrongQuestionCount?: number;
   lastAttemptScore?: number;
@@ -25,7 +26,7 @@ interface QuizSetupProps {
   onStart: (quizType: 'all' | 'wrong') => void;
 }
 
-const QuizSetup = ({ subject, questionCount, wrongQuestionCount = 0, lastAttemptScore, onBack, onStart }: QuizSetupProps) => {
+const QuizSetup = ({ subject, documentName, questionCount, wrongQuestionCount = 0, lastAttemptScore, onBack, onStart }: QuizSetupProps) => {
   const [quizType, setQuizType] = useState<'all' | 'wrong'>('all');
 
   const handleStart = () => {
@@ -52,6 +53,36 @@ const QuizSetup = ({ subject, questionCount, wrongQuestionCount = 0, lastAttempt
     }
   };
 
+  const getQuizTitle = () => {
+    if (subject && documentName) {
+      return `${subject.name} ${documentName} Quiz`;
+    } else if (subject) {
+      return `${subject.name} Quiz`;
+    }
+    return 'Quiz';
+  };
+
+  const getButtonText = () => {
+    if (lastAttemptScore !== undefined) {
+      return 'Try Previous Quiz Again';
+    }
+    return 'Start Quiz';
+  };
+
+  const getButtonIcon = () => {
+    if (lastAttemptScore !== undefined) {
+      return <RefreshCw className="mr-2 h-4 w-4" />;
+    }
+    return <Play className="mr-2 h-4 w-4" />;
+  };
+
+  const getButtonColor = () => {
+    if (lastAttemptScore !== undefined) {
+      return 'bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600';
+    }
+    return 'bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700';
+  };
+
   return (
     <div className="max-w-2xl mx-auto">
       <div className="mb-6">
@@ -67,7 +98,7 @@ const QuizSetup = ({ subject, questionCount, wrongQuestionCount = 0, lastAttempt
         <CardHeader>
           <CardTitle className="flex items-center">
             <Target className="mr-2 h-5 w-5" />
-            {subject?.name || 'Quiz'} Quiz
+            {getQuizTitle()}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -129,10 +160,10 @@ const QuizSetup = ({ subject, questionCount, wrongQuestionCount = 0, lastAttempt
           <Button
             onClick={handleStart}
             disabled={displayQuestionCount === 0}
-            className="w-full bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700 py-3 disabled:opacity-50 disabled:cursor-not-allowed"
+            className={`w-full py-3 disabled:opacity-50 disabled:cursor-not-allowed ${getButtonColor()}`}
           >
-            <RefreshCw className="mr-2 h-4 w-4" />
-            {displayQuestionCount === 0 ? 'No Questions Available' : 'Redo Previous Quiz'}
+            {getButtonIcon()}
+            {displayQuestionCount === 0 ? 'No Questions Available' : getButtonText()}
           </Button>
         </CardContent>
       </Card>
