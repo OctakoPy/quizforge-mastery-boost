@@ -150,7 +150,7 @@ Please respond with a JSON array in this exact format:
 
 Make sure the questions are relevant to the content and test understanding of key concepts. Ensure all questions have exactly 4 options and the correct_answer is a number between 0 and 3.`;
 
-  const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=' + geminiApiKey, {
+  const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=' + geminiApiKey, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
