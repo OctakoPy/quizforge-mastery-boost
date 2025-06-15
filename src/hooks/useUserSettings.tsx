@@ -127,45 +127,65 @@ export const useUserSettings = () => {
       console.log('Deleting all user data for user:', user.id);
 
       // Delete in correct order to respect foreign key constraints
-      // 1. First delete question_results (references quiz_attempts)
+      // 1. First delete question_results (no dependencies)
+      console.log('Deleting question_results...');
       const { error: questionResultsError } = await supabase
         .from('question_results')
         .delete()
         .eq('user_id', user.id);
 
-      if (questionResultsError) throw questionResultsError;
+      if (questionResultsError) {
+        console.error('Error deleting question_results:', questionResultsError);
+        throw questionResultsError;
+      }
 
-      // 2. Then delete quiz_attempts (references documents and subjects)
+      // 2. Then delete quiz_attempts (references question_results)
+      console.log('Deleting quiz_attempts...');
       const { error: attemptsError } = await supabase
         .from('quiz_attempts')
         .delete()
         .eq('user_id', user.id);
 
-      if (attemptsError) throw attemptsError;
+      if (attemptsError) {
+        console.error('Error deleting quiz_attempts:', attemptsError);
+        throw attemptsError;
+      }
 
-      // 3. Then delete questions (references documents and subjects)
+      // 3. Then delete questions (might reference documents and subjects)
+      console.log('Deleting questions...');
       const { error: questionsError } = await supabase
         .from('questions')
         .delete()
         .eq('user_id', user.id);
 
-      if (questionsError) throw questionsError;
+      if (questionsError) {
+        console.error('Error deleting questions:', questionsError);
+        throw questionsError;
+      }
 
-      // 4. Then delete documents (referenced by questions and quiz_attempts)
+      // 4. Then delete documents (might be referenced by questions)
+      console.log('Deleting documents...');
       const { error: documentsError } = await supabase
         .from('documents')
         .delete()
         .eq('user_id', user.id);
 
-      if (documentsError) throw documentsError;
+      if (documentsError) {
+        console.error('Error deleting documents:', documentsError);
+        throw documentsError;
+      }
 
-      // 5. Finally delete subjects (referenced by documents, questions, and quiz_attempts)
+      // 5. Finally delete subjects (might be referenced by documents and questions)
+      console.log('Deleting subjects...');
       const { error: subjectsError } = await supabase
         .from('subjects')
         .delete()
         .eq('user_id', user.id);
 
-      if (subjectsError) throw subjectsError;
+      if (subjectsError) {
+        console.error('Error deleting subjects:', subjectsError);
+        throw subjectsError;
+      }
 
       console.log('All user data deleted successfully');
     },
