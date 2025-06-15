@@ -61,15 +61,25 @@ const QuizSetup = ({ subject, questionCount, wrongQuestionCount = 0, onBack, onS
                   All Questions ({questionCount} questions)
                 </Label>
               </div>
-              {wrongQuestionCount > 0 && (
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="wrong" id="wrong-questions" />
-                  <Label htmlFor="wrong-questions" className="flex-1 cursor-pointer flex items-center">
-                    <RotateCcw className="mr-2 h-4 w-4" />
-                    Repeat Wrong Questions ({wrongQuestionCount} questions)
-                  </Label>
-                </div>
-              )}
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem 
+                  value="wrong" 
+                  id="wrong-questions" 
+                  disabled={wrongQuestionCount === 0}
+                />
+                <Label 
+                  htmlFor="wrong-questions" 
+                  className={`flex-1 cursor-pointer flex items-center ${
+                    wrongQuestionCount === 0 ? 'text-gray-400' : ''
+                  }`}
+                >
+                  <RotateCcw className="mr-2 h-4 w-4" />
+                  Practice Wrong Questions ({wrongQuestionCount} questions)
+                  {wrongQuestionCount === 0 && (
+                    <span className="ml-2 text-xs text-gray-500">(Take a quiz first)</span>
+                  )}
+                </Label>
+              </div>
             </RadioGroup>
           </div>
 
@@ -79,7 +89,7 @@ const QuizSetup = ({ subject, questionCount, wrongQuestionCount = 0, onBack, onS
               <p className="text-sm text-blue-600">Questions</p>
             </div>
             <div className="text-center p-4 bg-green-50 rounded-lg">
-              <p className="text-2xl font-bold text-green-600">~{displayQuestionCount * 1.5}</p>
+              <p className="text-2xl font-bold text-green-600">~{Math.max(1, displayQuestionCount * 1.5)}</p>
               <p className="text-sm text-green-600">Minutes</p>
             </div>
           </div>
@@ -99,9 +109,10 @@ const QuizSetup = ({ subject, questionCount, wrongQuestionCount = 0, onBack, onS
 
           <Button
             onClick={handleStart}
-            className="w-full bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700 py-3"
+            disabled={displayQuestionCount === 0}
+            className="w-full bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700 py-3 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Start Quiz
+            {displayQuestionCount === 0 ? 'No Questions Available' : 'Start Quiz'}
           </Button>
         </CardContent>
       </Card>

@@ -43,11 +43,12 @@ const QuizResults = ({
   const score = Math.round((correctAnswers / questions.length) * 100);
 
   useEffect(() => {
-    const saveQuizAttempt = async () => {
+    const saveQuizAttemptAndResults = async () => {
       if (!user || !subjectId || isWrongQuestionsQuiz) return;
 
       try {
-        const { error } = await supabase
+        // Save quiz attempt
+        const { data: quizAttempt, error: attemptError } = await supabase
           .from('quiz_attempts')
           .insert({
             user_id: user.id,
@@ -56,22 +57,52 @@ const QuizResults = ({
             correct_answers: correctAnswers,
             total_questions: questions.length,
             score: score
-          });
+          })
+          .select()
+          .single();
 
-        if (error) {
-          console.error('Error saving quiz attempt:', error);
+        if (attemptError) {
+          console.error('Error saving quiz attempt:', attemptError);
+          return;
+        }
+
+        // Save individual question results
+        const questionResults = questions.map((question, index) => {
+          const userAnswer = userAnswers[index];
+          const correctAnswerIndex = question.shuffledCorrectAnswer !== undefined 
+            ? question.shuffledCorrectAnswer 
+            : question.correct_answer;
+          const isCorrect = userAnswer === correctAnswerIndex;
+
+          return {
+            user_id: user.id,
+            quiz_attempt_id: quizAttempt.id,
+            question_id: question.id,
+            user_answer: userAnswer,
+            correct_answer: correctAnswerIndex,
+            is_correct: isCorrect
+          };
+        });
+
+        const { error: resultsError } = await supabase
+          .from('question_results')
+          .insert(questionResults);
+
+        if (resultsError) {
+          console.error('Error saving question results:', resultsError);
         } else {
-          // Invalidate and refetch statistics
+          // Invalidate and refetch queries
           queryClient.invalidateQueries({ queryKey: ['statistics', user.id] });
-          console.log('Quiz attempt saved successfully');
+          queryClient.invalidateQueries({ queryKey: ['wrong-questions'] });
+          console.log('Quiz attempt and question results saved successfully');
         }
       } catch (error) {
-        console.error('Error saving quiz attempt:', error);
+        console.error('Error saving quiz data:', error);
       }
     };
 
-    saveQuizAttempt();
-  }, [user, subjectId, documentId, correctAnswers, questions.length, score, queryClient, isMegaQuiz, isWrongQuestionsQuiz]);
+    saveQuizAttemptAndResults();
+  }, [user, subjectId, documentId, correctAnswers, questions, userAnswers, score, queryClient, isMegaQuiz, isWrongQuestionsQuiz]);
 
   return (
     <div className="max-w-2xl mx-auto">

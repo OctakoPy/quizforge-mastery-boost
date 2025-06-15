@@ -74,6 +74,54 @@ export type Database = {
         }
         Relationships: []
       }
+      question_results: {
+        Row: {
+          correct_answer: number
+          created_at: string
+          id: string
+          is_correct: boolean
+          question_id: string
+          quiz_attempt_id: string
+          user_answer: number
+          user_id: string
+        }
+        Insert: {
+          correct_answer: number
+          created_at?: string
+          id?: string
+          is_correct: boolean
+          question_id: string
+          quiz_attempt_id: string
+          user_answer: number
+          user_id: string
+        }
+        Update: {
+          correct_answer?: number
+          created_at?: string
+          id?: string
+          is_correct?: boolean
+          question_id?: string
+          quiz_attempt_id?: string
+          user_answer?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_question_results_question"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "questions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_question_results_quiz_attempt"
+            columns: ["quiz_attempt_id"]
+            isOneToOne: false
+            referencedRelation: "quiz_attempts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       questions: {
         Row: {
           correct_answer: number

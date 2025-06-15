@@ -16,56 +16,76 @@ export const useWrongQuestions = (subjectId?: string, documentId?: string) => {
     queryFn: async () => {
       if (!user) return [];
 
-      // Get the most recent quiz attempt for this subject/document
-      let attemptQuery = supabase
-        .from('quiz_attempts')
-        .select('id, attempted_at')
-        .eq('user_id', user.id);
-
-      if (documentId) {
-        attemptQuery = attemptQuery.eq('document_id', documentId);
-      } else if (subjectId) {
-        attemptQuery = attemptQuery.eq('subject_id', subjectId);
-      }
-
-      const { data: attempts, error: attemptError } = await attemptQuery
-        .order('attempted_at', { ascending: false })
-        .limit(1);
-
-      if (attemptError) throw attemptError;
-
-      if (!attempts || attempts.length === 0) {
-        return [];
-      }
-
-      // For now, we'll return all questions since we don't store individual question results
-      // In a future enhancement, we could store detailed question results
+      // Get wrong questions based on question_results
       let query = supabase
-        .from('questions')
-        .select('*')
-        .eq('user_id', user.id);
+        .from('question_results')
+        .select(`
+          question_id,
+          questions (
+            id,
+            question,
+            options,
+            correct_answer,
+            user_id,
+            document_id,
+            subject_id,
+            created_at
+          )
+        `)
+        .eq('user_id', user.id)
+        .eq('is_correct', false);
 
       if (documentId) {
-        query = query.eq('document_id', documentId);
+        // For document-specific quizzes, get wrong questions from that document
+        const { data: documentQuestions } = await supabase
+          .from('questions')
+          .select('id')
+          .eq('document_id', documentId);
+        
+        if (documentQuestions && documentQuestions.length > 0) {
+          const questionIds = documentQuestions.map(q => q.id);
+          query = query.in('question_id', questionIds);
+        } else {
+          return [];
+        }
       } else if (subjectId) {
-        query = query.eq('subject_id', subjectId);
+        // For subject-wide quizzes, get wrong questions from that subject
+        const { data: subjectQuestions } = await supabase
+          .from('questions')
+          .select('id')
+          .eq('subject_id', subjectId);
+        
+        if (subjectQuestions && subjectQuestions.length > 0) {
+          const questionIds = subjectQuestions.map(q => q.id);
+          query = query.in('question_id', questionIds);
+        } else {
+          return [];
+        }
       }
 
-      const { data, error } = await query.order('created_at', { ascending: false });
+      const { data, error } = await query
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
 
-      // Transform the data
-      const processedQuestions: Question[] = (data || []).map(question => ({
+      // Extract unique questions (a question might be wrong multiple times)
+      const uniqueQuestions = new Map();
+      
+      (data || []).forEach(result => {
+        if (result.questions && !uniqueQuestions.has(result.question_id)) {
+          uniqueQuestions.set(result.question_id, result.questions);
+        }
+      });
+
+      // Transform to Question format and add shuffling
+      const processedQuestions: Question[] = Array.from(uniqueQuestions.values()).map(question => ({
         ...question,
         options: Array.isArray(question.options) 
           ? question.options.map(option => String(option))
           : []
       }));
 
-      // For now, return a subset as "wrong questions" (in future, this would be based on actual results)
-      // This is a placeholder implementation
-      return processedQuestions.slice(0, Math.max(1, Math.floor(processedQuestions.length * 0.3)));
+      return processedQuestions;
     },
     enabled: !!user && (!!subjectId || !!documentId)
   });
