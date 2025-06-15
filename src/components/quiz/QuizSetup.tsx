@@ -20,11 +20,12 @@ interface QuizSetupProps {
   subject: Subject | undefined;
   questionCount: number;
   wrongQuestionCount?: number;
+  lastAttemptScore?: number;
   onBack: () => void;
   onStart: (quizType: 'all' | 'wrong') => void;
 }
 
-const QuizSetup = ({ subject, questionCount, wrongQuestionCount = 0, onBack, onStart }: QuizSetupProps) => {
+const QuizSetup = ({ subject, questionCount, wrongQuestionCount = 0, lastAttemptScore, onBack, onStart }: QuizSetupProps) => {
   const [quizType, setQuizType] = useState<'all' | 'wrong'>('all');
 
   const handleStart = () => {
@@ -32,6 +33,24 @@ const QuizSetup = ({ subject, questionCount, wrongQuestionCount = 0, onBack, onS
   };
 
   const displayQuestionCount = quizType === 'wrong' ? wrongQuestionCount : questionCount;
+
+  const getEncouragingMessage = () => {
+    if (lastAttemptScore === undefined) {
+      return "Ready to start your first quiz? Let's see what you know!";
+    }
+    
+    if (lastAttemptScore >= 90) {
+      return `Outstanding! You scored ${lastAttemptScore}% last time. Can you maintain that excellence?`;
+    } else if (lastAttemptScore >= 80) {
+      return `Great job! You scored ${lastAttemptScore}% last time. Ready to push for even higher?`;
+    } else if (lastAttemptScore >= 70) {
+      return `Good work! You scored ${lastAttemptScore}% last time. Let's aim for improvement!`;
+    } else if (lastAttemptScore >= 60) {
+      return `You scored ${lastAttemptScore}% last time. You've got this - let's improve together!`;
+    } else {
+      return `You scored ${lastAttemptScore}% last time. Every attempt is progress - let's do better!`;
+    }
+  };
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -41,7 +60,7 @@ const QuizSetup = ({ subject, questionCount, wrongQuestionCount = 0, onBack, onS
           Back to Dashboard
         </Button>
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Quiz Setup</h1>
-        <p className="text-gray-600">Get ready to test your knowledge</p>
+        <p className="text-gray-600">{getEncouragingMessage()}</p>
       </div>
 
       <Card>

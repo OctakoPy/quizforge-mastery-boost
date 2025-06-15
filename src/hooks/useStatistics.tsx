@@ -175,17 +175,27 @@ export const useStatistics = () => {
         };
       }) || [];
 
-      // Calculate overall statistics
+      // Calculate overall statistics - FIXED: Use only latest attempt per quiz for overall mastery
       const totalAttempts = attempts?.length || 0;
-      const overallScores = attempts?.map(a => a.score) || [];
-      const overallMastery = overallScores.length > 0 
-        ? Math.round(overallScores.reduce((sum, score) => sum + score, 0) / overallScores.length)
+      
+      // Get latest attempt per quiz for overall mastery calculation
+      const latestQuizAttempts: Record<string, any> = {};
+      attempts?.forEach(attempt => {
+        const key = attempt.document_id ? `${attempt.document_id}_${attempt.subject_id}` : `subject_${attempt.subject_id}`;
+        if (!latestQuizAttempts[key] || new Date(attempt.attempted_at) > new Date(latestQuizAttempts[key].attempted_at)) {
+          latestQuizAttempts[key] = attempt;
+        }
+      });
+      
+      const latestScores = Object.values(latestQuizAttempts).map((attempt: any) => attempt.score);
+      const overallMastery = latestScores.length > 0 
+        ? Math.round(latestScores.reduce((sum, score) => sum + score, 0) / latestScores.length)
         : 0;
 
       // Calculate study streak
       const studyStreak = calculateStudyStreak(attempts || []);
 
-      // Create recent activity from attempts - this is the key fix
+      // Create recent activity from attempts
       const recentActivity = (attempts || []).slice(0, 20).map(attempt => ({
         date: attempt.attempted_at,
         subjectName: attempt.subjects?.name || 'Unknown Subject',

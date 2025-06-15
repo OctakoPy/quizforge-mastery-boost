@@ -1,10 +1,10 @@
-
 import { useState } from 'react';
 import { ArrowLeft, Target } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useQuestions, Question } from '@/hooks/useQuestions';
 import { useWrongQuestions } from '@/hooks/useWrongQuestions';
+import { useStatistics } from '@/hooks/useStatistics';
 import QuizSetup from '@/components/quiz/QuizSetup';
 import QuizQuestion from '@/components/quiz/QuizQuestion';
 import QuizResults from '@/components/quiz/QuizResults';
@@ -49,12 +49,31 @@ const QuizInterface = ({ subjects, selectedSubject, selectedDocument, onBack, me
     selectedSubject || undefined,
     selectedDocument || undefined
   );
+
+  const { statistics } = useStatistics();
   
   // Use mega questions if provided, otherwise use normal or wrong questions based on quiz type
   const questions = isMegaQuiz 
     ? (megaQuestions || []) 
     : (quizType === 'wrong' ? wrongQuestions : normalQuestions);
   const isLoading = isMegaQuiz ? false : (quizType === 'wrong' ? isWrongLoading : isNormalLoading);
+
+  // Get last attempt score for this specific quiz
+  const getLastAttemptScore = () => {
+    if (!statistics?.quizStatistics || isMegaQuiz) return undefined;
+    
+    if (selectedDocument) {
+      // For individual document quiz
+      const quizStat = statistics.quizStatistics.find(q => q.quizId === selectedDocument);
+      return quizStat?.averageScore;
+    } else if (selectedSubject) {
+      // For subject quiz, get the most recent attempt for this subject
+      const subjectStat = statistics.subjectStatistics.find(s => s.subjectId === selectedSubject);
+      return subjectStat?.averageScore;
+    }
+    
+    return undefined;
+  };
 
   const handleAnswerSelect = (value: string) => {
     setSelectedAnswer(value);
@@ -116,6 +135,7 @@ const QuizInterface = ({ subjects, selectedSubject, selectedDocument, onBack, me
         subject={subject}
         questionCount={normalQuestions.length}
         wrongQuestionCount={wrongQuestions.length}
+        lastAttemptScore={getLastAttemptScore()}
         onBack={onBack}
         onStart={handleQuizStart}
       />
