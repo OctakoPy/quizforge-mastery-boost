@@ -128,7 +128,7 @@ export const useUserSettings = () => {
 
       try {
         // Delete in correct order to respect foreign key constraints
-        // 1. First delete question_results (no foreign key dependencies)
+        // 1. First delete question_results (references quiz_attempts)
         console.log('Deleting question_results...');
         const { error: questionResultsError } = await supabase
           .from('question_results')
@@ -140,7 +140,7 @@ export const useUserSettings = () => {
           throw new Error(`Failed to delete question results: ${questionResultsError.message}`);
         }
 
-        // 2. Then delete quiz_attempts
+        // 2. Then delete quiz_attempts (references documents and subjects)
         console.log('Deleting quiz_attempts...');
         const { error: attemptsError } = await supabase
           .from('quiz_attempts')
@@ -152,7 +152,7 @@ export const useUserSettings = () => {
           throw new Error(`Failed to delete quiz attempts: ${attemptsError.message}`);
         }
 
-        // 3. Then delete questions
+        // 3. Then delete questions (references documents and subjects)
         console.log('Deleting questions...');
         const { error: questionsError } = await supabase
           .from('questions')
@@ -164,7 +164,7 @@ export const useUserSettings = () => {
           throw new Error(`Failed to delete questions: ${questionsError.message}`);
         }
 
-        // 4. Then delete documents
+        // 4. Then delete documents (references subjects)
         console.log('Deleting documents...');
         const { error: documentsError } = await supabase
           .from('documents')
