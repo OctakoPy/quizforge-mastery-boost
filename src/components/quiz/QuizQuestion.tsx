@@ -28,6 +28,9 @@ const QuizQuestion = ({
 }: QuizQuestionProps) => {
   const progress = ((currentQuestionIndex + 1) / totalQuestions) * 100;
 
+  // Use shuffled options if available, otherwise use original options
+  const displayOptions = question.shuffledOptions || question.options;
+
   return (
     <div className="max-w-2xl mx-auto">
       <div className="mb-6">
@@ -51,7 +54,7 @@ const QuizQuestion = ({
         </CardHeader>
         <CardContent className="space-y-6">
           <RadioGroup value={selectedAnswer} onValueChange={onAnswerSelect}>
-            {question.options.map((option, index) => (
+            {displayOptions.map((option, index) => (
               <div key={index} className="flex items-center space-x-2 p-3 rounded-lg hover:bg-gray-50 transition-colors">
                 <RadioGroupItem value={index.toString()} id={`option-${index}`} />
                 <Label htmlFor={`option-${index}`} className="flex-1 cursor-pointer">

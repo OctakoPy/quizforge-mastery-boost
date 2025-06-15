@@ -16,6 +16,7 @@ interface QuizResultsProps {
   subjectId?: string;
   documentId?: string;
   isMegaQuiz?: boolean;
+  isWrongQuestionsQuiz?: boolean;
 }
 
 const QuizResults = ({ 
@@ -25,19 +26,25 @@ const QuizResults = ({
   onBack, 
   subjectId,
   documentId,
-  isMegaQuiz = false
+  isMegaQuiz = false,
+  isWrongQuestionsQuiz = false
 }: QuizResultsProps) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   
   const correctAnswers = userAnswers.reduce((count, answer, index) => {
-    return count + (answer === questions[index].correct_answer ? 1 : 0);
+    const question = questions[index];
+    // Use shuffled correct answer if available, otherwise use original
+    const correctAnswerIndex = question.shuffledCorrectAnswer !== undefined 
+      ? question.shuffledCorrectAnswer 
+      : question.correct_answer;
+    return count + (answer === correctAnswerIndex ? 1 : 0);
   }, 0);
   const score = Math.round((correctAnswers / questions.length) * 100);
 
   useEffect(() => {
     const saveQuizAttempt = async () => {
-      if (!user || !subjectId) return;
+      if (!user || !subjectId || isWrongQuestionsQuiz) return;
 
       try {
         const { error } = await supabase
@@ -64,13 +71,18 @@ const QuizResults = ({
     };
 
     saveQuizAttempt();
-  }, [user, subjectId, documentId, correctAnswers, questions.length, score, queryClient, isMegaQuiz]);
+  }, [user, subjectId, documentId, correctAnswers, questions.length, score, queryClient, isMegaQuiz, isWrongQuestionsQuiz]);
 
   return (
     <div className="max-w-2xl mx-auto">
       <Card>
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl">Quiz Complete!</CardTitle>
+          <CardTitle className="text-2xl">
+            {isWrongQuestionsQuiz ? 'Practice Complete!' : 'Quiz Complete!'}
+          </CardTitle>
+          {isWrongQuestionsQuiz && (
+            <p className="text-sm text-gray-600">Practice sessions don't affect your mastery scores</p>
+          )}
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="text-center">
@@ -92,7 +104,13 @@ const QuizResults = ({
             <h3 className="font-semibold text-gray-900">Review:</h3>
             {questions.map((question, index) => {
               const userAnswer = userAnswers[index];
-              const isCorrect = userAnswer === question.correct_answer;
+              const correctAnswerIndex = question.shuffledCorrectAnswer !== undefined 
+                ? question.shuffledCorrectAnswer 
+                : question.correct_answer;
+              const isCorrect = userAnswer === correctAnswerIndex;
+              
+              // Use shuffled options if available for display
+              const displayOptions = question.shuffledOptions || question.options;
               
               return (
                 <div key={question.id} className="border rounded-lg p-4">
@@ -106,11 +124,11 @@ const QuizResults = ({
                   </div>
                   <div className="ml-7 space-y-1 text-sm">
                     <p className="text-green-600">
-                      ✓ Correct: {question.options[question.correct_answer] || 'N/A'}
+                      ✓ Correct: {displayOptions[correctAnswerIndex] || 'N/A'}
                     </p>
                     {!isCorrect && (
                       <p className="text-red-500">
-                        ✗ Your answer: {question.options[userAnswer] || 'N/A'}
+                        ✗ Your answer: {displayOptions[userAnswer] || 'N/A'}
                       </p>
                     )}
                   </div>
@@ -121,7 +139,7 @@ const QuizResults = ({
 
           <div className="flex space-x-4">
             <Button onClick={onRestart} variant="outline" className="flex-1">
-              Retake Quiz
+              {isWrongQuestionsQuiz ? 'Practice Again' : 'Retake Quiz'}
             </Button>
             <Button onClick={onBack} className="flex-1">
               Back to Dashboard

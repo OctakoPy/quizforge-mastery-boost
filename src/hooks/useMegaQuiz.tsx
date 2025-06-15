@@ -10,6 +10,31 @@ export interface MegaQuizOptions {
   shuffle?: boolean;
 }
 
+function shuffleArray<T>(array: T[]): T[] {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+}
+
+function shuffleQuestionOptions(question: Question): Question {
+  const optionsWithIndex = question.options.map((option, index) => ({ option, originalIndex: index }));
+  const shuffledOptionsWithIndex = shuffleArray(optionsWithIndex);
+  
+  const shuffledOptions = shuffledOptionsWithIndex.map(item => item.option);
+  const shuffledCorrectAnswer = shuffledOptionsWithIndex.findIndex(
+    item => item.originalIndex === question.correct_answer
+  );
+
+  return {
+    ...question,
+    shuffledOptions,
+    shuffledCorrectAnswer
+  };
+}
+
 export const useMegaQuiz = (options?: MegaQuizOptions) => {
   const { user } = useAuth();
 
@@ -44,6 +69,9 @@ export const useMegaQuiz = (options?: MegaQuizOptions) => {
         questions = shuffleArray([...questions]);
       }
 
+      // Shuffle options for each question
+      questions = questions.map(shuffleQuestionOptions);
+
       // Limit questions if specified
       if (options.questionLimit && options.questionLimit > 0) {
         questions = questions.slice(0, options.questionLimit);
@@ -60,12 +88,3 @@ export const useMegaQuiz = (options?: MegaQuizOptions) => {
     error
   };
 };
-
-function shuffleArray<T>(array: T[]): T[] {
-  const shuffled = [...array];
-  for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-  }
-  return shuffled;
-}

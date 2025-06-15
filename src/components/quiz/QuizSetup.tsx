@@ -1,7 +1,10 @@
 
-import { ArrowLeft, Target } from 'lucide-react';
+import { useState } from 'react';
+import { ArrowLeft, Target, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
 
 interface Subject {
   id: string;
@@ -16,11 +19,20 @@ interface Subject {
 interface QuizSetupProps {
   subject: Subject | undefined;
   questionCount: number;
+  wrongQuestionCount?: number;
   onBack: () => void;
-  onStart: () => void;
+  onStart: (quizType: 'all' | 'wrong') => void;
 }
 
-const QuizSetup = ({ subject, questionCount, onBack, onStart }: QuizSetupProps) => {
+const QuizSetup = ({ subject, questionCount, wrongQuestionCount = 0, onBack, onStart }: QuizSetupProps) => {
+  const [quizType, setQuizType] = useState<'all' | 'wrong'>('all');
+
+  const handleStart = () => {
+    onStart(quizType);
+  };
+
+  const displayQuestionCount = quizType === 'wrong' ? wrongQuestionCount : questionCount;
+
   return (
     <div className="max-w-2xl mx-auto">
       <div className="mb-6">
@@ -40,13 +52,34 @@ const QuizSetup = ({ subject, questionCount, onBack, onStart }: QuizSetupProps) 
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
+          <div className="space-y-4">
+            <h3 className="font-semibold text-gray-900">Quiz Type:</h3>
+            <RadioGroup value={quizType} onValueChange={(value) => setQuizType(value as 'all' | 'wrong')}>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="all" id="all-questions" />
+                <Label htmlFor="all-questions" className="flex-1 cursor-pointer">
+                  All Questions ({questionCount} questions)
+                </Label>
+              </div>
+              {wrongQuestionCount > 0 && (
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="wrong" id="wrong-questions" />
+                  <Label htmlFor="wrong-questions" className="flex-1 cursor-pointer flex items-center">
+                    <RotateCcw className="mr-2 h-4 w-4" />
+                    Repeat Wrong Questions ({wrongQuestionCount} questions)
+                  </Label>
+                </div>
+              )}
+            </RadioGroup>
+          </div>
+
           <div className="grid grid-cols-2 gap-4">
             <div className="text-center p-4 bg-blue-50 rounded-lg">
-              <p className="text-2xl font-bold text-blue-600">{questionCount}</p>
+              <p className="text-2xl font-bold text-blue-600">{displayQuestionCount}</p>
               <p className="text-sm text-blue-600">Questions</p>
             </div>
             <div className="text-center p-4 bg-green-50 rounded-lg">
-              <p className="text-2xl font-bold text-green-600">~{questionCount * 1.5}</p>
+              <p className="text-2xl font-bold text-green-600">~{displayQuestionCount * 1.5}</p>
               <p className="text-sm text-green-600">Minutes</p>
             </div>
           </div>
@@ -55,13 +88,17 @@ const QuizSetup = ({ subject, questionCount, onBack, onStart }: QuizSetupProps) 
             <h3 className="font-semibold text-gray-900">Quiz Rules:</h3>
             <ul className="text-sm text-gray-600 space-y-1">
               <li>• Each question has only one correct answer</li>
+              <li>• Questions and options are randomly shuffled</li>
               <li>• You cannot go back to previous questions</li>
               <li>• Your results will be saved to track your progress</li>
+              {quizType === 'wrong' && (
+                <li>• Wrong question practice does not affect mastery scores</li>
+              )}
             </ul>
           </div>
 
           <Button
-            onClick={onStart}
+            onClick={handleStart}
             className="w-full bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700 py-3"
           >
             Start Quiz

@@ -4,6 +4,7 @@ import { ArrowLeft, Target } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useQuestions, Question } from '@/hooks/useQuestions';
+import { useWrongQuestions } from '@/hooks/useWrongQuestions';
 import QuizSetup from '@/components/quiz/QuizSetup';
 import QuizQuestion from '@/components/quiz/QuizQuestion';
 import QuizResults from '@/components/quiz/QuizResults';
@@ -33,18 +34,27 @@ const QuizInterface = ({ subjects, selectedSubject, selectedDocument, onBack, me
   const [userAnswers, setUserAnswers] = useState<number[]>([]);
   const [showResults, setShowResults] = useState(false);
   const [quizStarted, setQuizStarted] = useState(false);
+  const [quizType, setQuizType] = useState<'all' | 'wrong'>('all');
 
   const subject = selectedSubject ? subjects.find(s => s.id === selectedSubject) : subjects[0];
   
   // Use different query based on whether we have a specific document or are doing a mega quiz
   const { questions: normalQuestions, isLoading: isNormalLoading } = useQuestions(
     isMegaQuiz ? selectedSubject || undefined : undefined,
-    !isMegaQuiz && selectedDocument ? selectedDocument : undefined
+    !isMegaQuiz && selectedDocument ? selectedDocument : undefined,
+    true // Always shuffle questions for regular quizzes now
+  );
+
+  const { wrongQuestions, isLoading: isWrongLoading } = useWrongQuestions(
+    selectedSubject || undefined,
+    selectedDocument || undefined
   );
   
-  // Use mega questions if provided, otherwise use normal questions
-  const questions = isMegaQuiz ? (megaQuestions || []) : normalQuestions;
-  const isLoading = isMegaQuiz ? false : isNormalLoading;
+  // Use mega questions if provided, otherwise use normal or wrong questions based on quiz type
+  const questions = isMegaQuiz 
+    ? (megaQuestions || []) 
+    : (quizType === 'wrong' ? wrongQuestions : normalQuestions);
+  const isLoading = isMegaQuiz ? false : (quizType === 'wrong' ? isWrongLoading : isNormalLoading);
 
   const handleAnswerSelect = (value: string) => {
     setSelectedAnswer(value);
@@ -69,6 +79,11 @@ const QuizInterface = ({ subjects, selectedSubject, selectedDocument, onBack, me
     setUserAnswers([]);
     setShowResults(false);
     setQuizStarted(false);
+  };
+
+  const handleQuizStart = (selectedQuizType: 'all' | 'wrong') => {
+    setQuizType(selectedQuizType);
+    setQuizStarted(true);
   };
 
   if (isLoading) {
@@ -100,13 +115,19 @@ const QuizInterface = ({ subjects, selectedSubject, selectedDocument, onBack, me
         <Card>
           <CardContent className="p-8 text-center">
             <Target className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">No questions available</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              {quizType === 'wrong' ? 'No wrong questions available' : 'No questions available'}
+            </h3>
             <p className="text-gray-600 mb-4">
-              {subject?.name ? `No questions found for ${subject.name}.` : 'No questions found for this subject.'} 
-              Upload some quizzes to get started!
+              {quizType === 'wrong' 
+                ? 'Take a quiz first to have questions to practice.'
+                : subject?.name 
+                  ? `No questions found for ${subject.name}. Upload some quizzes to get started!`
+                  : 'No questions found for this subject.'
+              }
             </p>
             <Button onClick={onBack}>
-              Upload Quizzes
+              {quizType === 'wrong' ? 'Back to Dashboard' : 'Upload Quizzes'}
             </Button>
           </CardContent>
         </Card>
@@ -127,6 +148,7 @@ const QuizInterface = ({ subjects, selectedSubject, selectedDocument, onBack, me
         subjectId={selectedSubject || undefined}
         documentId={documentId}
         isMegaQuiz={isMegaQuiz}
+        isWrongQuestionsQuiz={quizType === 'wrong'}
       />
     );
   }
@@ -135,9 +157,10 @@ const QuizInterface = ({ subjects, selectedSubject, selectedDocument, onBack, me
     return (
       <QuizSetup
         subject={subject}
-        questionCount={questions.length}
+        questionCount={normalQuestions.length}
+        wrongQuestionCount={wrongQuestions.length}
         onBack={onBack}
-        onStart={() => setQuizStarted(true)}
+        onStart={handleQuizStart}
       />
     );
   }
