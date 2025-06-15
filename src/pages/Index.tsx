@@ -1,6 +1,5 @@
 
 import { useState } from 'react';
-import { Clock } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Header from '@/components/Header';
 import DocumentUpload from '@/components/DocumentUpload';
@@ -89,22 +88,6 @@ const Index = () => {
           onUpload={() => setActiveView('upload')}
         />
       </div>
-
-      {subjects.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <Clock className="mr-2 h-5 w-5" />
-              Recent Activity
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-center py-4 text-gray-500">
-              <p>Check detailed statistics for comprehensive activity tracking</p>
-            </div>
-          </CardContent>
-        </Card>
-      )}
     </div>
   );
 
