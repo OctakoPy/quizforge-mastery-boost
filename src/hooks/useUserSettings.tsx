@@ -126,7 +126,16 @@ export const useUserSettings = () => {
 
       console.log('Deleting all user data for user:', user.id);
 
-      // Delete in order: quiz_attempts, questions, documents, subjects
+      // Delete in correct order to respect foreign key constraints
+      // 1. First delete question_results (references quiz_attempts)
+      const { error: questionResultsError } = await supabase
+        .from('question_results')
+        .delete()
+        .eq('user_id', user.id);
+
+      if (questionResultsError) throw questionResultsError;
+
+      // 2. Then delete quiz_attempts (references documents and subjects)
       const { error: attemptsError } = await supabase
         .from('quiz_attempts')
         .delete()
@@ -134,6 +143,7 @@ export const useUserSettings = () => {
 
       if (attemptsError) throw attemptsError;
 
+      // 3. Then delete questions (references documents and subjects)
       const { error: questionsError } = await supabase
         .from('questions')
         .delete()
@@ -141,6 +151,7 @@ export const useUserSettings = () => {
 
       if (questionsError) throw questionsError;
 
+      // 4. Then delete documents (referenced by questions and quiz_attempts)
       const { error: documentsError } = await supabase
         .from('documents')
         .delete()
@@ -148,6 +159,7 @@ export const useUserSettings = () => {
 
       if (documentsError) throw documentsError;
 
+      // 5. Finally delete subjects (referenced by documents, questions, and quiz_attempts)
       const { error: subjectsError } = await supabase
         .from('subjects')
         .delete()
@@ -162,6 +174,7 @@ export const useUserSettings = () => {
       queryClient.invalidateQueries({ queryKey: ['documents'] });
       queryClient.invalidateQueries({ queryKey: ['questions'] });
       queryClient.invalidateQueries({ queryKey: ['quiz-attempts'] });
+      queryClient.invalidateQueries({ queryKey: ['question-results'] });
     }
   });
 
