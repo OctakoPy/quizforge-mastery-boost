@@ -69,7 +69,6 @@ const Index = () => {
         subjects={subjects}
         totalQuestions={totalQuestions}
         onUpload={() => setActiveView('upload')}
-        onQuiz={() => setActiveView('quiz')}
         onDocuments={() => setActiveView('documents')}
         onStatistics={() => setActiveView('statistics')}
       />
