@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { ArrowLeft, Target, RotateCcw } from 'lucide-react';
+import { ArrowLeft, Target, RotateCcw, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -112,10 +112,15 @@ const QuizSetup = ({ subject, questionCount, wrongQuestionCount = 0, onBack, onS
             disabled={displayQuestionCount === 0}
             className="w-full bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700 py-3 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {displayQuestionCount === 0 ? 'No Questions Available' : 'Start Quiz'}
+            <RefreshCw className="mr-2 h-4 w-4" />
+            {displayQuestionCount === 0 ? 'No Questions Available' : 'Redo Previous Quiz'}
           </Button>
         </CardContent>
       </Card>
+
+      <div className="text-center mt-8 text-sm text-gray-500">
+        Created by Octako Py
+      </div>
     </div>
   );
 };
