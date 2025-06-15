@@ -1,21 +1,70 @@
 
+import { useEffect } from 'react';
 import { CheckCircle, XCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Question } from '@/hooks/useQuestions';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface QuizResultsProps {
   questions: Question[];
   userAnswers: number[];
   onRestart: () => void;
   onBack: () => void;
+  subjectId?: string;
+  documentId?: string;
+  isMegaQuiz?: boolean;
 }
 
-const QuizResults = ({ questions, userAnswers, onRestart, onBack }: QuizResultsProps) => {
+const QuizResults = ({ 
+  questions, 
+  userAnswers, 
+  onRestart, 
+  onBack, 
+  subjectId,
+  documentId,
+  isMegaQuiz = false
+}: QuizResultsProps) => {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  
   const correctAnswers = userAnswers.reduce((count, answer, index) => {
     return count + (answer === questions[index].correct_answer ? 1 : 0);
   }, 0);
   const score = Math.round((correctAnswers / questions.length) * 100);
+
+  useEffect(() => {
+    const saveQuizAttempt = async () => {
+      if (!user || !subjectId) return;
+
+      try {
+        const { error } = await supabase
+          .from('quiz_attempts')
+          .insert({
+            user_id: user.id,
+            subject_id: subjectId,
+            document_id: isMegaQuiz ? null : documentId,
+            correct_answers: correctAnswers,
+            total_questions: questions.length,
+            score: score
+          });
+
+        if (error) {
+          console.error('Error saving quiz attempt:', error);
+        } else {
+          // Invalidate and refetch statistics
+          queryClient.invalidateQueries({ queryKey: ['statistics', user.id] });
+          console.log('Quiz attempt saved successfully');
+        }
+      } catch (error) {
+        console.error('Error saving quiz attempt:', error);
+      }
+    };
+
+    saveQuizAttempt();
+  }, [user, subjectId, documentId, correctAnswers, questions.length, score, queryClient, isMegaQuiz]);
 
   return (
     <div className="max-w-2xl mx-auto">

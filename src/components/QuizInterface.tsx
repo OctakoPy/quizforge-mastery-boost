@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { ArrowLeft, Target } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -108,12 +109,18 @@ const QuizInterface = ({ subjects, selectedSubject, onBack, megaQuestions, isMeg
   }
 
   if (showResults) {
+    // Get document ID for single quiz (not mega quiz)
+    const documentId = !isMegaQuiz && questions.length > 0 ? questions[0].document_id : undefined;
+    
     return (
       <QuizResults
         questions={questions}
         userAnswers={userAnswers}
         onRestart={restartQuiz}
         onBack={onBack}
+        subjectId={selectedSubject || undefined}
+        documentId={documentId}
+        isMegaQuiz={isMegaQuiz}
       />
     );
   }
