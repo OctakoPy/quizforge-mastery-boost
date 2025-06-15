@@ -38,7 +38,14 @@ export const useQuestions = (subjectId?: string) => {
       const { data, error } = await query;
 
       if (error) throw error;
-      return data || [];
+      
+      // Transform the data to ensure options is always string[]
+      return (data || []).map(question => ({
+        ...question,
+        options: Array.isArray(question.options) 
+          ? question.options.map(option => String(option))
+          : []
+      }));
     },
     enabled: !!user
   });

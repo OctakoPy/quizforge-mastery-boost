@@ -1,9 +1,8 @@
-
 import { useState } from 'react';
 import { ArrowLeft, Target } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { useQuestions } from '@/hooks/useQuestions';
+import { useQuestions, Question } from '@/hooks/useQuestions';
 import QuizSetup from '@/components/quiz/QuizSetup';
 import QuizQuestion from '@/components/quiz/QuizQuestion';
 import QuizResults from '@/components/quiz/QuizResults';

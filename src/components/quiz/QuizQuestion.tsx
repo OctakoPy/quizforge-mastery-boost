@@ -5,16 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
-
-interface Question {
-  id: string;
-  question: string;
-  options: string[];
-  correct_answer: number;
-  subject_id: string;
-  document_id: string;
-  created_at: string;
-}
+import { Question } from '@/hooks/useQuestions';
 
 interface QuizQuestionProps {
   question: Question;
@@ -36,9 +27,6 @@ const QuizQuestion = ({
   onExit 
 }: QuizQuestionProps) => {
   const progress = ((currentQuestionIndex + 1) / totalQuestions) * 100;
-  const currentOptions = Array.isArray(question.options) 
-    ? question.options.map(option => String(option)) 
-    : [];
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -63,7 +51,7 @@ const QuizQuestion = ({
         </CardHeader>
         <CardContent className="space-y-6">
           <RadioGroup value={selectedAnswer} onValueChange={onAnswerSelect}>
-            {currentOptions.map((option, index) => (
+            {question.options.map((option, index) => (
               <div key={index} className="flex items-center space-x-2 p-3 rounded-lg hover:bg-gray-50 transition-colors">
                 <RadioGroupItem value={index.toString()} id={`option-${index}`} />
                 <Label htmlFor={`option-${index}`} className="flex-1 cursor-pointer">

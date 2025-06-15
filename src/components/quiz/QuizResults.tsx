@@ -2,16 +2,7 @@
 import { CheckCircle, XCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-
-interface Question {
-  id: string;
-  question: string;
-  options: string[];
-  correct_answer: number;
-  subject_id: string;
-  document_id: string;
-  created_at: string;
-}
+import { Question } from '@/hooks/useQuestions';
 
 interface QuizResultsProps {
   questions: Question[];
@@ -25,13 +16,6 @@ const QuizResults = ({ questions, userAnswers, onRestart, onBack }: QuizResultsP
     return count + (answer === questions[index].correct_answer ? 1 : 0);
   }, 0);
   const score = Math.round((correctAnswers / questions.length) * 100);
-
-  const getOptionsAsStrings = (options: any): string[] => {
-    if (Array.isArray(options)) {
-      return options.map(option => String(option));
-    }
-    return [];
-  };
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -60,7 +44,6 @@ const QuizResults = ({ questions, userAnswers, onRestart, onBack }: QuizResultsP
             {questions.map((question, index) => {
               const userAnswer = userAnswers[index];
               const isCorrect = userAnswer === question.correct_answer;
-              const options = getOptionsAsStrings(question.options);
               
               return (
                 <div key={question.id} className="border rounded-lg p-4">
@@ -74,11 +57,11 @@ const QuizResults = ({ questions, userAnswers, onRestart, onBack }: QuizResultsP
                   </div>
                   <div className="ml-7 space-y-1 text-sm">
                     <p className="text-green-600">
-                      ✓ Correct: {options[question.correct_answer] || 'N/A'}
+                      ✓ Correct: {question.options[question.correct_answer] || 'N/A'}
                     </p>
                     {!isCorrect && (
                       <p className="text-red-500">
-                        ✗ Your answer: {options[userAnswer] || 'N/A'}
+                        ✗ Your answer: {question.options[userAnswer] || 'N/A'}
                       </p>
                     )}
                   </div>
