@@ -9,10 +9,13 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import UserSettingsDialog from '@/components/UserSettingsDialog';
+import { useState } from 'react';
 
 const Header = () => {
   const { user, signOut } = useAuth();
   const { toast } = useToast();
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   const handleSignOut = async () => {
     try {
@@ -54,7 +57,7 @@ const Header = () => {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setSettingsOpen(true)}>
                   <Settings className="mr-2 h-4 w-4" />
                   Settings
                 </DropdownMenuItem>
@@ -64,6 +67,11 @@ const Header = () => {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+            
+            <UserSettingsDialog 
+              open={settingsOpen} 
+              onOpenChange={setSettingsOpen}
+            />
           </div>
         </div>
       </div>

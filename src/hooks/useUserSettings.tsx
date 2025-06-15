@@ -7,6 +7,8 @@ export interface UserSettings {
   id: string;
   user_id: string;
   gemini_api_key: string | null;
+  theme: string;
+  study_reminders: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -49,7 +51,11 @@ export const useUserSettings = () => {
   });
 
   const updateSettings = useMutation({
-    mutationFn: async (updates: { gemini_api_key?: string }) => {
+    mutationFn: async (updates: { 
+      gemini_api_key?: string;
+      theme?: string;
+      study_reminders?: boolean;
+    }) => {
       if (!user) {
         console.error('User not authenticated');
         throw new Error('User not authenticated');
@@ -112,11 +118,60 @@ export const useUserSettings = () => {
     }
   });
 
+  const deleteAllUserData = useMutation({
+    mutationFn: async () => {
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
+      console.log('Deleting all user data for user:', user.id);
+
+      // Delete in order: quiz_attempts, questions, documents, subjects
+      const { error: attemptsError } = await supabase
+        .from('quiz_attempts')
+        .delete()
+        .eq('user_id', user.id);
+
+      if (attemptsError) throw attemptsError;
+
+      const { error: questionsError } = await supabase
+        .from('questions')
+        .delete()
+        .eq('user_id', user.id);
+
+      if (questionsError) throw questionsError;
+
+      const { error: documentsError } = await supabase
+        .from('documents')
+        .delete()
+        .eq('user_id', user.id);
+
+      if (documentsError) throw documentsError;
+
+      const { error: subjectsError } = await supabase
+        .from('subjects')
+        .delete()
+        .eq('user_id', user.id);
+
+      if (subjectsError) throw subjectsError;
+
+      console.log('All user data deleted successfully');
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['subjects'] });
+      queryClient.invalidateQueries({ queryKey: ['documents'] });
+      queryClient.invalidateQueries({ queryKey: ['questions'] });
+      queryClient.invalidateQueries({ queryKey: ['quiz-attempts'] });
+    }
+  });
+
   return {
     settings,
     isLoading,
     error,
     updateSettings: updateSettings.mutateAsync,
-    isUpdating: updateSettings.isPending
+    isUpdating: updateSettings.isPending,
+    deleteAllUserData: deleteAllUserData.mutateAsync,
+    isDeletingData: deleteAllUserData.isPending
   };
 };
