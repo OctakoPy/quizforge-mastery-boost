@@ -126,6 +126,7 @@ export type Database = {
         Row: {
           attempted_at: string
           correct_answers: number
+          document_id: string | null
           duration_seconds: number | null
           id: string
           score: number
@@ -136,6 +137,7 @@ export type Database = {
         Insert: {
           attempted_at?: string
           correct_answers: number
+          document_id?: string | null
           duration_seconds?: number | null
           id?: string
           score: number
@@ -146,6 +148,7 @@ export type Database = {
         Update: {
           attempted_at?: string
           correct_answers?: number
+          document_id?: string | null
           duration_seconds?: number | null
           id?: string
           score?: number
@@ -154,6 +157,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "quiz_attempts_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "quiz_attempts_subject_id_fkey"
             columns: ["subject_id"]

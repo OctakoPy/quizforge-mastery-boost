@@ -59,29 +59,35 @@ export const useStatistics = () => {
         .from('quiz_attempts')
         .select(`
           *,
-          subjects(id, name),
+          subjects!inner(id, name),
           documents(id, name)
         `)
         .eq('user_id', user.id)
         .order('attempted_at', { ascending: false });
 
-      if (attemptsError) throw attemptsError;
+      if (attemptsError) {
+        console.error('Error fetching attempts:', attemptsError);
+        throw attemptsError;
+      }
 
-      // Get subjects with quiz counts
+      // Get subjects with document counts
       const { data: subjects, error: subjectsError } = await supabase
         .from('subjects')
         .select(`
           *,
-          documents(id, name),
-          questions(count)
+          documents(id, name)
         `)
         .eq('user_id', user.id);
 
-      if (subjectsError) throw subjectsError;
+      if (subjectsError) {
+        console.error('Error fetching subjects:', subjectsError);
+        throw subjectsError;
+      }
 
       // Calculate quiz statistics
       const quizStats: QuizStatistics[] = [];
       const quizGroups = attempts?.reduce((acc, attempt: any) => {
+        if (!attempt.document_id) return acc;
         const key = `${attempt.document_id}_${attempt.subject_id}`;
         if (!acc[key]) acc[key] = [];
         acc[key].push(attempt);
