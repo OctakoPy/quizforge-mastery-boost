@@ -79,11 +79,17 @@ const QuizInterface = ({ subjects, selectedSubject, selectedDocument, onBack, me
     setUserAnswers([]);
     setShowResults(false);
     setQuizStarted(false);
+    setQuizType('all');
   };
 
   const handleQuizStart = (selectedQuizType: 'all' | 'wrong') => {
     setQuizType(selectedQuizType);
     setQuizStarted(true);
+    // Reset quiz state when starting
+    setCurrentQuestionIndex(0);
+    setSelectedAnswer('');
+    setUserAnswers([]);
+    setShowResults(false);
   };
 
   if (isLoading) {
@@ -103,7 +109,21 @@ const QuizInterface = ({ subjects, selectedSubject, selectedDocument, onBack, me
     );
   }
 
-  if (questions.length === 0 && !isLoading) {
+  // Show setup screen if quiz hasn't started yet or if we don't have questions for the selected type
+  if (!quizStarted) {
+    return (
+      <QuizSetup
+        subject={subject}
+        questionCount={normalQuestions.length}
+        wrongQuestionCount={wrongQuestions.length}
+        onBack={onBack}
+        onStart={handleQuizStart}
+      />
+    );
+  }
+
+  // Check if we have questions after quiz has started
+  if (questions.length === 0) {
     return (
       <div className="max-w-2xl mx-auto">
         <div className="mb-6">
@@ -126,8 +146,8 @@ const QuizInterface = ({ subjects, selectedSubject, selectedDocument, onBack, me
                   : 'No questions found for this subject.'
               }
             </p>
-            <Button onClick={onBack}>
-              {quizType === 'wrong' ? 'Back to Dashboard' : 'Upload Quizzes'}
+            <Button onClick={() => setQuizStarted(false)}>
+              Back to Quiz Setup
             </Button>
           </CardContent>
         </Card>
@@ -149,18 +169,6 @@ const QuizInterface = ({ subjects, selectedSubject, selectedDocument, onBack, me
         documentId={documentId}
         isMegaQuiz={isMegaQuiz}
         isWrongQuestionsQuiz={quizType === 'wrong'}
-      />
-    );
-  }
-
-  if (!quizStarted) {
-    return (
-      <QuizSetup
-        subject={subject}
-        questionCount={normalQuestions.length}
-        wrongQuestionCount={wrongQuestions.length}
-        onBack={onBack}
-        onStart={handleQuizStart}
       />
     );
   }
