@@ -54,6 +54,8 @@ export const useStatistics = () => {
     queryFn: async () => {
       if (!user) return null;
 
+      console.log('Fetching statistics for user:', user.id);
+
       // Get quiz attempts with related data
       const { data: attempts, error: attemptsError } = await supabase
         .from('quiz_attempts')
@@ -70,6 +72,8 @@ export const useStatistics = () => {
         throw attemptsError;
       }
 
+      console.log('Quiz attempts fetched:', attempts);
+
       // Get subjects with document counts
       const { data: subjects, error: subjectsError } = await supabase
         .from('subjects')
@@ -83,6 +87,8 @@ export const useStatistics = () => {
         console.error('Error fetching subjects:', subjectsError);
         throw subjectsError;
       }
+
+      console.log('Subjects fetched:', subjects);
 
       // Calculate quiz statistics
       const quizStats: QuizStatistics[] = [];
@@ -179,12 +185,15 @@ export const useStatistics = () => {
       // Calculate study streak
       const studyStreak = calculateStudyStreak(attempts || []);
 
+      // Create recent activity from attempts - this is the key fix
       const recentActivity = (attempts || []).slice(0, 20).map(attempt => ({
         date: attempt.attempted_at,
         subjectName: attempt.subjects?.name || 'Unknown Subject',
         quizName: attempt.documents?.name || 'Unknown Quiz',
         score: attempt.score
       }));
+
+      console.log('Recent activity created:', recentActivity);
 
       const overallStats: OverallStatistics = {
         totalSubjects: subjects?.length || 0,
@@ -194,6 +203,8 @@ export const useStatistics = () => {
         studyStreak,
         recentActivity
       };
+
+      console.log('Overall statistics:', overallStats);
 
       return {
         quizStatistics: quizStats,
