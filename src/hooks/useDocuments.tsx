@@ -40,32 +40,55 @@ export const useDocuments = () => {
     mutationFn: async ({ 
       file, 
       subjectId, 
-      questionCount 
+      questions,
+      title
     }: { 
       file: File; 
       subjectId: string; 
-      questionCount: number;
+      questions: any[];
+      title: string;
     }) => {
       if (!user) throw new Error('User not authenticated');
 
-      // Call the edge function to handle document upload and processing
-      const { data, error } = await supabase.functions.invoke('process-document', {
-        body: {
-          fileName: file.name,
-          fileSize: file.size,
-          subjectId,
-          questionCount,
-          fileData: await file.arrayBuffer()
-        }
-      });
+      // Create document record
+      const { data: document, error: docError } = await supabase
+        .from('documents')
+        .insert({
+          name: title,
+          user_id: user.id,
+          subject_id: subjectId,
+          file_size: file.size,
+          processed: true,
+          file_path: `quizzes/${user.id}/${Date.now()}_${file.name}`,
+          text_content: await file.text()
+        })
+        .select()
+        .single();
 
-      if (error) throw error;
-      return data;
+      if (docError) throw docError;
+
+      // Insert all questions
+      const questionsToInsert = questions.map(q => ({
+        question: q.question,
+        options: q.options,
+        correct_answer: q.correct_answer,
+        subject_id: subjectId,
+        document_id: document.id,
+        user_id: user.id
+      }));
+
+      const { error: questionsError } = await supabase
+        .from('questions')
+        .insert(questionsToInsert);
+
+      if (questionsError) throw questionsError;
+
+      return document;
     },
     onSuccess: () => {
-      // Invalidate both documents and subjects queries to refresh the UI
       queryClient.invalidateQueries({ queryKey: ['documents'] });
       queryClient.invalidateQueries({ queryKey: ['subjects'] });
+      queryClient.invalidateQueries({ queryKey: ['questions'] });
     }
   });
 

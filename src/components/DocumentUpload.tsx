@@ -7,9 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import AddSubjectDialog from '@/components/AddSubjectDialog';
 import { useDocuments } from '@/hooks/useDocuments';
-import { useUserSettings } from '@/hooks/useUserSettings';
 import { useToast } from '@/hooks/use-toast';
-import UserSettingsDialog from '@/components/UserSettingsDialog';
 
 interface Subject {
   id: string;
@@ -29,59 +27,101 @@ interface DocumentUploadProps {
 const DocumentUpload = ({ subjects, onBack }: DocumentUploadProps) => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [selectedSubject, setSelectedSubject] = useState<string>('');
-  const [questionCount, setQuestionCount] = useState<string>('10');
   
   const { uploadDocument, isUploading } = useDocuments();
-  const { settings } = useUserSettings();
   const { toast } = useToast();
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file && file.type === 'application/pdf') {
+    if (file && file.type === 'text/plain') {
       setSelectedFile(file);
     } else {
       toast({
         title: "Invalid file type",
-        description: "Please select a PDF file.",
+        description: "Please select a text (.txt) file.",
         variant: "destructive"
       });
     }
   };
 
   const handleSubjectCreated = () => {
-    // Refresh subjects list by clearing selection
     setSelectedSubject('');
+  };
+
+  const parseQuizFile = async (file: File): Promise<{ questions: any[], title: string }> => {
+    const text = await file.text();
+    const title = file.name.replace('.txt', '');
+    
+    // Split by /// markers to get question blocks
+    const questionBlocks = text.split('///').filter(block => block.trim());
+    
+    const questions = questionBlocks.map((block, index) => {
+      const lines = block.trim().split('\n').filter(line => line.trim());
+      
+      let question = '';
+      let options: string[] = [];
+      let correctAnswer = 0;
+      
+      for (const line of lines) {
+        const trimmedLine = line.trim();
+        
+        if (trimmedLine.startsWith('[Question:')) {
+          question = trimmedLine.match(/\[Question:\s*"(.+)"\]/)?.[1] || '';
+        } else if (trimmedLine.match(/^\[([ABCD]):\s*"(.+)"\]/)) {
+          const match = trimmedLine.match(/^\[([ABCD]):\s*"(.+)"\]/);
+          if (match) {
+            options.push(match[2]);
+          }
+        } else if (trimmedLine.startsWith('[Solution:')) {
+          const solutionMatch = trimmedLine.match(/\[Solution:\s*"([ABCD])"\]/);
+          if (solutionMatch) {
+            const solutionLetter = solutionMatch[1];
+            correctAnswer = ['A', 'B', 'C', 'D'].indexOf(solutionLetter);
+          }
+        }
+      }
+      
+      if (!question || options.length !== 4 || correctAnswer === -1) {
+        throw new Error(`Invalid question format at question ${index + 1}. Please check the formatting.`);
+      }
+      
+      return {
+        question,
+        options,
+        correct_answer: correctAnswer
+      };
+    });
+    
+    if (questions.length === 0) {
+      throw new Error('No valid questions found in the file. Please check the formatting.');
+    }
+    
+    return { questions, title };
   };
 
   const handleGenerate = async () => {
     if (!selectedFile || !selectedSubject) return;
-    
-    if (!settings?.gemini_api_key) {
-      toast({
-        title: "Gemini API key required",
-        description: "Please add your Gemini API key in settings to generate questions.",
-        variant: "destructive"
-      });
-      return;
-    }
 
     try {
+      const { questions, title } = await parseQuizFile(selectedFile);
+      
       await uploadDocument({
         file: selectedFile,
         subjectId: selectedSubject,
-        questionCount: parseInt(questionCount)
+        questions,
+        title
       });
 
       toast({
         title: "Success!",
-        description: `Document processed and ${questionCount} questions generated successfully.`
+        description: `Quiz "${title}" uploaded with ${questions.length} questions.`
       });
 
       onBack();
     } catch (error: any) {
       toast({
         title: "Error",
-        description: error.message || "Failed to process document. Please try again.",
+        description: error.message || "Failed to process quiz file. Please check the format.",
         variant: "destructive"
       });
     }
@@ -98,47 +138,45 @@ const DocumentUpload = ({ subjects, onBack }: DocumentUploadProps) => {
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back to Dashboard
         </Button>
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Upload Document</h1>
-        <p className="text-gray-600">Upload your study materials and generate AI-powered quiz questions</p>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Upload Quiz</h1>
+        <p className="text-gray-600">Upload your quiz files with questions in the specified format</p>
       </div>
 
-      {!settings?.gemini_api_key && (
-        <Card className="mb-6 border-orange-200 bg-orange-50">
+      <div className="space-y-6">
+        <Card className="border-blue-200 bg-blue-50">
           <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <div className="flex-1">
-                <p className="text-sm font-medium text-orange-800">
-                  Gemini API key required for question generation
-                </p>
-                <p className="text-xs text-orange-600">
-                  Please add your API key to start generating questions from documents.
-                </p>
-              </div>
-              <UserSettingsDialog 
-                trigger={
-                  <Button size="sm" variant="outline">
-                    Add API Key
-                  </Button>
-                }
-              />
+            <h3 className="font-medium text-blue-800 mb-2">Quiz Format Instructions</h3>
+            <div className="text-sm text-blue-700 space-y-2">
+              <p>Your text file should contain questions in this exact format:</p>
+              <pre className="bg-white p-2 rounded text-xs overflow-x-auto">
+{`///
+[Question: "What is 10+10?"]
+[A: "20"]
+[B: "15"] 
+[C: "10"]
+[D: "90"]
+[Solution: "A"]
+///`}
+              </pre>
+              <p>• Each question must be wrapped with /// markers</p>
+              <p>• Use exactly this format with square brackets and quotes</p>
+              <p>• The filename will be used as the quiz title</p>
             </div>
           </CardContent>
         </Card>
-      )}
 
-      <div className="space-y-6">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center">
               <Upload className="mr-2 h-5 w-5" />
-              Select Document
+              Select Quiz File
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-blue-400 transition-colors">
               <input
                 type="file"
-                accept=".pdf"
+                accept=".txt"
                 onChange={handleFileChange}
                 className="hidden"
                 id="file-upload"
@@ -146,10 +184,10 @@ const DocumentUpload = ({ subjects, onBack }: DocumentUploadProps) => {
               <label htmlFor="file-upload" className="cursor-pointer">
                 <FileText className="mx-auto h-12 w-12 text-gray-400 mb-4" />
                 <p className="text-lg font-medium text-gray-900 mb-2">
-                  {selectedFile ? selectedFile.name : 'Choose a PDF file'}
+                  {selectedFile ? selectedFile.name : 'Choose a text file'}
                 </p>
                 <p className="text-sm text-gray-500">
-                  Click to browse or drag and drop your PDF here
+                  Click to browse or drag and drop your .txt quiz file here
                 </p>
               </label>
             </div>
@@ -192,38 +230,23 @@ const DocumentUpload = ({ subjects, onBack }: DocumentUploadProps) => {
                 Select an existing subject or create a new one
               </p>
             </div>
-
-            <div>
-              <Label htmlFor="questions">Number of Questions</Label>
-              <Select value={questionCount} onValueChange={setQuestionCount}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="5">5 questions</SelectItem>
-                  <SelectItem value="10">10 questions</SelectItem>
-                  <SelectItem value="15">15 questions</SelectItem>
-                  <SelectItem value="20">20 questions</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
           </CardContent>
         </Card>
 
         <Button
           onClick={handleGenerate}
-          disabled={!selectedFile || !selectedSubject || isUploading || !settings?.gemini_api_key}
+          disabled={!selectedFile || !selectedSubject || isUploading}
           className="w-full bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 py-3"
         >
           {isUploading ? (
             <>
               <Sparkles className="mr-2 h-4 w-4 animate-spin" />
-              Processing Document...
+              Uploading Quiz...
             </>
           ) : (
             <>
               <Sparkles className="mr-2 h-4 w-4" />
-              Generate Quiz Questions
+              Upload Quiz
             </>
           )}
         </Button>

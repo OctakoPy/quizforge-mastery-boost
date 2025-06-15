@@ -10,16 +10,13 @@ import AddSubjectDialog from '@/components/AddSubjectDialog';
 import StatsOverview from '@/components/dashboard/StatsOverview';
 import QuickActions from '@/components/dashboard/QuickActions';
 import SubjectsGrid from '@/components/dashboard/SubjectsGrid';
-import SettingsReminder from '@/components/dashboard/SettingsReminder';
 import { useSubjects } from '@/hooks/useSubjects';
-import { useUserSettings } from '@/hooks/useUserSettings';
 
 const Index = () => {
   const [activeView, setActiveView] = useState<'dashboard' | 'upload' | 'quiz' | 'documents'>('dashboard');
   const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
   
   const { subjects, isLoading } = useSubjects();
-  const { settings } = useUserSettings();
 
   const totalQuestions = subjects.reduce((sum, subject) => sum + (subject.questionCount || 0), 0);
   const totalDocuments = subjects.reduce((sum, subject) => sum + (subject.documentCount || 0), 0);
@@ -31,8 +28,6 @@ const Index = () => {
 
   const renderDashboard = () => (
     <div className="space-y-8">
-      <SettingsReminder hasApiKey={!!settings?.gemini_api_key} />
-
       <StatsOverview subjects={subjects} />
 
       <QuickActions

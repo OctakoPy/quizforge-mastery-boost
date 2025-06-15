@@ -23,13 +23,13 @@ const DocumentManager = ({ onBack }: DocumentManagerProps) => {
       setDeletingId(documentId);
       await deleteDocument(documentId);
       toast({
-        title: "Document deleted",
+        title: "Quiz deleted",
         description: `"${documentName}" and all its questions have been removed.`
       });
     } catch (error: any) {
       toast({
         title: "Error",
-        description: error.message || "Failed to delete document. Please try again.",
+        description: error.message || "Failed to delete quiz. Please try again.",
         variant: "destructive"
       });
     } finally {
@@ -56,35 +56,35 @@ const DocumentManager = ({ onBack }: DocumentManagerProps) => {
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back to Dashboard
         </Button>
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Document Management</h1>
-        <p className="text-gray-600">Manage your uploaded documents and generated questions</p>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Quiz Management</h1>
+        <p className="text-gray-600">Manage your uploaded quizzes and questions</p>
       </div>
 
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center">
             <FileText className="mr-2 h-5 w-5" />
-            Your Documents ({documents.length})
+            Your Quizzes ({documents.length})
           </CardTitle>
         </CardHeader>
         <CardContent>
           {isLoading ? (
             <div className="text-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-              <p className="text-gray-600">Loading documents...</p>
+              <p className="text-gray-600">Loading quizzes...</p>
             </div>
           ) : documents.length === 0 ? (
             <div className="text-center py-8">
               <FileX className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">No documents found</h3>
-              <p className="text-gray-600">Upload your first document to get started.</p>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">No quizzes found</h3>
+              <p className="text-gray-600">Upload your first quiz to get started.</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Document Name</TableHead>
+                    <TableHead>Quiz Name</TableHead>
                     <TableHead>Size</TableHead>
                     <TableHead>Uploaded</TableHead>
                     <TableHead>Status</TableHead>
@@ -113,7 +113,7 @@ const DocumentManager = ({ onBack }: DocumentManagerProps) => {
                             ? 'bg-green-100 text-green-800' 
                             : 'bg-yellow-100 text-yellow-800'
                         }`}>
-                          {doc.processed ? 'Processed' : 'Processing'}
+                          {doc.processed ? 'Ready' : 'Processing'}
                         </span>
                       </TableCell>
                       <TableCell className="text-right">
@@ -135,9 +135,9 @@ const DocumentManager = ({ onBack }: DocumentManagerProps) => {
                           </AlertDialogTrigger>
                           <AlertDialogContent>
                             <AlertDialogHeader>
-                              <AlertDialogTitle>Delete Document</AlertDialogTitle>
+                              <AlertDialogTitle>Delete Quiz</AlertDialogTitle>
                               <AlertDialogDescription>
-                                Are you sure you want to delete "{doc.name}"? This will also delete all questions generated from this document. This action cannot be undone.
+                                Are you sure you want to delete "{doc.name}"? This will also delete all questions from this quiz. This action cannot be undone.
                               </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
