@@ -57,23 +57,51 @@ export const useUserSettings = () => {
 
       console.log('Updating settings for user:', user.id, 'with updates:', updates);
 
-      const { data, error } = await supabase
+      // Check if settings already exist
+      const { data: existingSettings } = await supabase
         .from('user_settings')
-        .upsert({
-          user_id: user.id,
-          ...updates,
-          updated_at: new Date().toISOString()
-        })
-        .select()
+        .select('id')
+        .eq('user_id', user.id)
         .single();
 
-      if (error) {
-        console.error('Error updating settings:', error);
-        throw error;
+      let result;
+      if (existingSettings) {
+        // Update existing record
+        console.log('Updating existing settings record');
+        const { data, error } = await supabase
+          .from('user_settings')
+          .update({
+            ...updates,
+            updated_at: new Date().toISOString()
+          })
+          .eq('user_id', user.id)
+          .select()
+          .single();
+        
+        result = { data, error };
+      } else {
+        // Insert new record
+        console.log('Creating new settings record');
+        const { data, error } = await supabase
+          .from('user_settings')
+          .insert({
+            user_id: user.id,
+            ...updates,
+            updated_at: new Date().toISOString()
+          })
+          .select()
+          .single();
+        
+        result = { data, error };
+      }
+
+      if (result.error) {
+        console.error('Error updating settings:', result.error);
+        throw result.error;
       }
       
-      console.log('Settings updated successfully:', data);
-      return data;
+      console.log('Settings updated successfully:', result.data);
+      return result.data;
     },
     onSuccess: () => {
       console.log('Settings update successful, invalidating queries');
