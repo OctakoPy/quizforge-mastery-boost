@@ -3,73 +3,24 @@ import { useState } from 'react';
 import { Upload, FileText, BookOpen, Trophy, Plus, ArrowRight, BarChart3, Clock, Target } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
 import Header from '@/components/Header';
 import SubjectCard from '@/components/SubjectCard';
 import DocumentUpload from '@/components/DocumentUpload';
 import QuizInterface from '@/components/QuizInterface';
-
-interface Subject {
-  id: string;
-  name: string;
-  documentCount: number;
-  questionCount: number;
-  masteryScore: number;
-  lastStudied: string;
-  color: string;
-}
-
-interface Document {
-  id: string;
-  name: string;
-  subjectId: string;
-  uploadDate: string;
-  questionCount: number;
-}
+import { useSubjects } from '@/hooks/useSubjects';
 
 const Index = () => {
   const [activeView, setActiveView] = useState<'dashboard' | 'upload' | 'quiz'>('dashboard');
   const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
+  
+  const { subjects, isLoading } = useSubjects();
 
-  // Mock data for demonstration
-  const [subjects] = useState<Subject[]>([
-    {
-      id: '1',
-      name: 'Computer Science',
-      documentCount: 5,
-      questionCount: 47,
-      masteryScore: 78,
-      lastStudied: '2 days ago',
-      color: 'bg-blue-500'
-    },
-    {
-      id: '2', 
-      name: 'Mathematics',
-      documentCount: 3,
-      questionCount: 32,
-      masteryScore: 85,
-      lastStudied: '1 day ago',
-      color: 'bg-green-500'
-    },
-    {
-      id: '3',
-      name: 'Physics',
-      documentCount: 4,
-      questionCount: 38,
-      masteryScore: 65,
-      lastStudied: '3 days ago',
-      color: 'bg-purple-500'
-    }
-  ]);
-
-  const [documents] = useState<Document[]>([
-    { id: '1', name: 'Data Structures.pdf', subjectId: '1', uploadDate: '2024-01-15', questionCount: 12 },
-    { id: '2', name: 'Algorithms.pdf', subjectId: '1', uploadDate: '2024-01-14', questionCount: 15 },
-    { id: '3', name: 'Calculus Notes.pdf', subjectId: '2', uploadDate: '2024-01-13', questionCount: 18 }
-  ]);
-
-  const totalQuestions = subjects.reduce((sum, subject) => sum + subject.questionCount, 0);
-  const averageMastery = Math.round(subjects.reduce((sum, subject) => sum + subject.masteryScore, 0) / subjects.length);
+  // Calculate stats from real data
+  const totalQuestions = subjects.reduce((sum, subject) => sum + (subject.questionCount || 0), 0);
+  const totalDocuments = subjects.reduce((sum, subject) => sum + (subject.documentCount || 0), 0);
+  const averageMastery = subjects.length > 0 
+    ? Math.round(subjects.reduce((sum, subject) => sum + (subject.masteryScore || 0), 0) / subjects.length)
+    : 0;
 
   const renderDashboard = () => (
     <div className="space-y-8">
@@ -93,7 +44,7 @@ const Index = () => {
               <FileText className="h-8 w-8 text-green-600" />
               <div>
                 <p className="text-sm font-medium text-green-600">Documents</p>
-                <p className="text-2xl font-bold text-green-900">{documents.length}</p>
+                <p className="text-2xl font-bold text-green-900">{totalDocuments}</p>
               </div>
             </div>
           </CardContent>
@@ -137,6 +88,7 @@ const Index = () => {
           variant="outline"
           onClick={() => setActiveView('quiz')}
           className="border-2 border-green-200 hover:bg-green-50"
+          disabled={subjects.length === 0}
         >
           <BarChart3 className="mr-2 h-4 w-4" />
           Take Quiz
@@ -153,48 +105,66 @@ const Index = () => {
           </Button>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {subjects.map((subject) => (
-            <SubjectCard
-              key={subject.id}
-              subject={subject}
-              onStartQuiz={() => {
-                setSelectedSubject(subject.id);
-                setActiveView('quiz');
-              }}
-            />
-          ))}
-        </div>
+        {isLoading ? (
+          <div className="text-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading your subjects...</p>
+          </div>
+        ) : subjects.length === 0 ? (
+          <Card className="border-2 border-dashed border-gray-300">
+            <CardContent className="p-8 text-center">
+              <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">No subjects yet</h3>
+              <p className="text-gray-600 mb-4">
+                Get started by creating your first subject or uploading a document.
+              </p>
+              <div className="flex gap-2 justify-center">
+                <Button 
+                  onClick={() => setActiveView('upload')}
+                  className="bg-gradient-to-r from-blue-600 to-blue-700"
+                >
+                  <Upload className="mr-2 h-4 w-4" />
+                  Upload Document
+                </Button>
+                <Button variant="outline">
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add Subject
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {subjects.map((subject) => (
+              <SubjectCard
+                key={subject.id}
+                subject={subject}
+                onStartQuiz={() => {
+                  setSelectedSubject(subject.id);
+                  setActiveView('quiz');
+                }}
+              />
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* Recent Activity */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <Clock className="mr-2 h-5 w-5" />
-            Recent Activity
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {documents.slice(0, 3).map((doc) => {
-              const subject = subjects.find(s => s.id === doc.subjectId);
-              return (
-                <div key={doc.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    <FileText className="h-5 w-5 text-gray-500" />
-                    <div>
-                      <p className="font-medium text-gray-900">{doc.name}</p>
-                      <p className="text-sm text-gray-500">{subject?.name} • {doc.questionCount} questions</p>
-                    </div>
-                  </div>
-                  <p className="text-sm text-gray-500">{doc.uploadDate}</p>
-                </div>
-              );
-            })}
-          </div>
-        </CardContent>
-      </Card>
+      {/* Recent Activity - Only show if there are subjects */}
+      {subjects.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <Clock className="mr-2 h-5 w-5" />
+              Recent Activity
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-center py-4 text-gray-500">
+              <p>Activity tracking coming soon...</p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 

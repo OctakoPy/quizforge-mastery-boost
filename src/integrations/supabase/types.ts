@@ -9,7 +9,211 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      documents: {
+        Row: {
+          file_path: string
+          file_size: number
+          id: string
+          name: string
+          processed: boolean
+          subject_id: string
+          text_content: string | null
+          upload_date: string
+          user_id: string
+        }
+        Insert: {
+          file_path: string
+          file_size: number
+          id?: string
+          name: string
+          processed?: boolean
+          subject_id: string
+          text_content?: string | null
+          upload_date?: string
+          user_id: string
+        }
+        Update: {
+          file_path?: string
+          file_size?: number
+          id?: string
+          name?: string
+          processed?: boolean
+          subject_id?: string
+          text_content?: string | null
+          upload_date?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documents_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "subjects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          id: string
+          updated_at: string
+          username: string
+        }
+        Insert: {
+          created_at?: string
+          id: string
+          updated_at?: string
+          username: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          updated_at?: string
+          username?: string
+        }
+        Relationships: []
+      }
+      questions: {
+        Row: {
+          correct_answer: number
+          created_at: string
+          document_id: string
+          id: string
+          options: Json
+          question: string
+          subject_id: string
+          user_id: string
+        }
+        Insert: {
+          correct_answer: number
+          created_at?: string
+          document_id: string
+          id?: string
+          options: Json
+          question: string
+          subject_id: string
+          user_id: string
+        }
+        Update: {
+          correct_answer?: number
+          created_at?: string
+          document_id?: string
+          id?: string
+          options?: Json
+          question?: string
+          subject_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "questions_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "questions_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "subjects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quiz_attempts: {
+        Row: {
+          attempted_at: string
+          correct_answers: number
+          duration_seconds: number | null
+          id: string
+          score: number
+          subject_id: string
+          total_questions: number
+          user_id: string
+        }
+        Insert: {
+          attempted_at?: string
+          correct_answers: number
+          duration_seconds?: number | null
+          id?: string
+          score: number
+          subject_id: string
+          total_questions: number
+          user_id: string
+        }
+        Update: {
+          attempted_at?: string
+          correct_answers?: number
+          duration_seconds?: number | null
+          id?: string
+          score?: number
+          subject_id?: string
+          total_questions?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quiz_attempts_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "subjects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      subjects: {
+        Row: {
+          color: string
+          created_at: string
+          id: string
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          id?: string
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          id?: string
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_settings: {
+        Row: {
+          created_at: string
+          gemini_api_key: string | null
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          gemini_api_key?: string | null
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          gemini_api_key?: string | null
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
