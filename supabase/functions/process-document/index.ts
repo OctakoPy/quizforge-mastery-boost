@@ -137,7 +137,7 @@ async function generateQuestions(textContent: string, questionCount: number, gem
   const prompt = `Based on the following text content, generate exactly ${questionCount} multiple-choice questions. Each question should have 4 options and indicate which option is correct (0, 1, 2, or 3).
 
 Text content:
-${textContent}
+${textContent.substring(0, 8000)} // Limit text length for API
 
 Please respond with a JSON array in this exact format:
 [
@@ -148,7 +148,7 @@ Please respond with a JSON array in this exact format:
   }
 ]
 
-Make sure the questions are relevant to the content and test understanding of key concepts.`;
+Make sure the questions are relevant to the content and test understanding of key concepts. Ensure all questions have exactly 4 options and the correct_answer is a number between 0 and 3.`;
 
   const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=' + geminiApiKey, {
     method: 'POST',
@@ -165,22 +165,50 @@ Make sure the questions are relevant to the content and test understanding of ke
   });
 
   if (!response.ok) {
-    throw new Error(`Gemini API error: ${response.statusText}`);
+    const errorText = await response.text();
+    console.error('Gemini API error response:', errorText);
+    throw new Error(`Gemini API error: ${response.status} ${response.statusText}`);
   }
 
   const data = await response.json();
+  
+  if (!data.candidates || !data.candidates[0] || !data.candidates[0].content) {
+    console.error('Unexpected Gemini response structure:', data);
+    throw new Error('Invalid response from Gemini API');
+  }
+  
   const generatedText = data.candidates[0].content.parts[0].text;
+  console.log('Generated text from Gemini:', generatedText);
   
   // Extract JSON from the response
   const jsonMatch = generatedText.match(/\[[\s\S]*\]/);
   if (!jsonMatch) {
+    console.error('No JSON found in Gemini response:', generatedText);
     throw new Error('Failed to extract questions from Gemini response');
   }
 
   try {
     const questions = JSON.parse(jsonMatch[0]);
+    
+    // Validate the questions structure
+    if (!Array.isArray(questions)) {
+      throw new Error('Questions is not an array');
+    }
+    
+    questions.forEach((q, index) => {
+      if (!q.question || !Array.isArray(q.options) || q.options.length !== 4 || typeof q.correct_answer !== 'number') {
+        throw new Error(`Invalid question structure at index ${index}`);
+      }
+      if (q.correct_answer < 0 || q.correct_answer > 3) {
+        throw new Error(`Invalid correct_answer at index ${index}: ${q.correct_answer}`);
+      }
+    });
+    
+    console.log(`Successfully parsed ${questions.length} questions`);
     return questions;
   } catch (parseError) {
+    console.error('Failed to parse questions JSON:', parseError);
+    console.error('Raw JSON string:', jsonMatch[0]);
     throw new Error('Failed to parse questions JSON from Gemini response');
   }
 }

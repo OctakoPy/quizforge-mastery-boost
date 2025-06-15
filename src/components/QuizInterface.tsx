@@ -194,6 +194,8 @@ const QuizInterface = ({ subjects, selectedSubject, onBack }: QuizInterfaceProps
               {questions.map((question, index) => {
                 const userAnswer = userAnswers[index];
                 const isCorrect = userAnswer === question.correct_answer;
+                // Safely handle options - ensure it's an array
+                const options = Array.isArray(question.options) ? question.options : [];
                 
                 return (
                   <div key={question.id} className="border rounded-lg p-4">
@@ -207,11 +209,11 @@ const QuizInterface = ({ subjects, selectedSubject, onBack }: QuizInterfaceProps
                     </div>
                     <div className="ml-7 space-y-1 text-sm">
                       <p className="text-green-600">
-                        ✓ Correct: {question.options[question.correct_answer]}
+                        ✓ Correct: {options[question.correct_answer] || 'N/A'}
                       </p>
                       {!isCorrect && (
                         <p className="text-red-500">
-                          ✗ Your answer: {question.options[userAnswer]}
+                          ✗ Your answer: {options[userAnswer] || 'N/A'}
                         </p>
                       )}
                     </div>
@@ -236,6 +238,8 @@ const QuizInterface = ({ subjects, selectedSubject, onBack }: QuizInterfaceProps
 
   const currentQuestion = questions[currentQuestionIndex];
   const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
+  // Safely handle options - ensure it's an array
+  const currentOptions = Array.isArray(currentQuestion.options) ? currentQuestion.options : [];
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -260,7 +264,7 @@ const QuizInterface = ({ subjects, selectedSubject, onBack }: QuizInterfaceProps
         </CardHeader>
         <CardContent className="space-y-6">
           <RadioGroup value={selectedAnswer} onValueChange={handleAnswerSelect}>
-            {currentQuestion.options.map((option, index) => (
+            {currentOptions.map((option, index) => (
               <div key={index} className="flex items-center space-x-2 p-3 rounded-lg hover:bg-gray-50 transition-colors">
                 <RadioGroupItem value={index.toString()} id={`option-${index}`} />
                 <Label htmlFor={`option-${index}`} className="flex-1 cursor-pointer">
