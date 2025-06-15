@@ -12,12 +12,14 @@ import QuickActions from '@/components/dashboard/QuickActions';
 import SubjectsGrid from '@/components/dashboard/SubjectsGrid';
 import StatisticsDashboard from '@/components/StatisticsDashboard';
 import MegaQuizSetup from '@/components/quiz/MegaQuizSetup';
+import QuizSelection from '@/components/quiz/QuizSelection';
 import { useSubjects } from '@/hooks/useSubjects';
 import { useMegaQuiz } from '@/hooks/useMegaQuiz';
 
 const Index = () => {
-  const [activeView, setActiveView] = useState<'dashboard' | 'upload' | 'quiz' | 'documents' | 'statistics' | 'mega-quiz' | 'mega-quiz-setup'>('dashboard');
+  const [activeView, setActiveView] = useState<'dashboard' | 'upload' | 'quiz' | 'documents' | 'statistics' | 'mega-quiz' | 'mega-quiz-setup' | 'quiz-selection'>('dashboard');
   const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
+  const [selectedDocument, setSelectedDocument] = useState<string | null>(null);
   const [megaQuizOptions, setMegaQuizOptions] = useState<{ questionLimit?: number; shuffle: boolean } | null>(null);
   
   const { subjects, isLoading } = useSubjects();
@@ -28,8 +30,25 @@ const Index = () => {
   const totalQuestions = subjects.reduce((sum, subject) => sum + (subject.questionCount || 0), 0);
   const totalDocuments = subjects.reduce((sum, subject) => sum + (subject.documentCount || 0), 0);
 
-  const handleStartQuiz = (subjectId: string) => {
+  const handleStartQuiz = (subjectId: string, documentId?: string) => {
     setSelectedSubject(subjectId);
+    if (documentId) {
+      // Start specific quiz directly
+      setSelectedDocument(documentId);
+      setActiveView('quiz');
+    } else {
+      // Show quiz selection if multiple quizzes exist
+      const subject = subjects.find(s => s.id === subjectId);
+      if (subject && subject.documentCount > 1) {
+        setActiveView('quiz-selection');
+      } else {
+        setActiveView('quiz');
+      }
+    }
+  };
+
+  const handleQuizSelect = (documentId: string) => {
+    setSelectedDocument(documentId);
     setActiveView('quiz');
   };
 
@@ -123,6 +142,13 @@ const Index = () => {
             <StatisticsDashboard />
           </div>
         )}
+        {activeView === 'quiz-selection' && selectedSubjectData && (
+          <QuizSelection
+            subject={selectedSubjectData}
+            onBack={() => setActiveView('dashboard')}
+            onQuizSelect={handleQuizSelect}
+          />
+        )}
         {activeView === 'mega-quiz-setup' && selectedSubjectData && (
           <MegaQuizSetup
             subject={selectedSubjectData}
@@ -135,6 +161,7 @@ const Index = () => {
           <QuizInterface
             subjects={subjects}
             selectedSubject={selectedSubject}
+            selectedDocument={selectedDocument}
             onBack={() => setActiveView('dashboard')}
           />
         )}

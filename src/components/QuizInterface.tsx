@@ -21,12 +21,13 @@ interface Subject {
 interface QuizInterfaceProps {
   subjects: Subject[];
   selectedSubject: string | null;
+  selectedDocument?: string | null;
   onBack: () => void;
   megaQuestions?: Question[];
   isMegaQuiz?: boolean;
 }
 
-const QuizInterface = ({ subjects, selectedSubject, onBack, megaQuestions, isMegaQuiz = false }: QuizInterfaceProps) => {
+const QuizInterface = ({ subjects, selectedSubject, selectedDocument, onBack, megaQuestions, isMegaQuiz = false }: QuizInterfaceProps) => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<string>('');
   const [userAnswers, setUserAnswers] = useState<number[]>([]);
@@ -34,7 +35,12 @@ const QuizInterface = ({ subjects, selectedSubject, onBack, megaQuestions, isMeg
   const [quizStarted, setQuizStarted] = useState(false);
 
   const subject = selectedSubject ? subjects.find(s => s.id === selectedSubject) : subjects[0];
-  const { questions: normalQuestions, isLoading: isNormalLoading } = useQuestions(selectedSubject || undefined);
+  
+  // Use different query based on whether we have a specific document or are doing a mega quiz
+  const { questions: normalQuestions, isLoading: isNormalLoading } = useQuestions(
+    isMegaQuiz ? selectedSubject || undefined : undefined,
+    !isMegaQuiz && selectedDocument ? selectedDocument : undefined
+  );
   
   // Use mega questions if provided, otherwise use normal questions
   const questions = isMegaQuiz ? (megaQuestions || []) : normalQuestions;
@@ -110,7 +116,7 @@ const QuizInterface = ({ subjects, selectedSubject, onBack, megaQuestions, isMeg
 
   if (showResults) {
     // Get document ID for single quiz (not mega quiz)
-    const documentId = !isMegaQuiz && questions.length > 0 ? questions[0].document_id : undefined;
+    const documentId = !isMegaQuiz && selectedDocument ? selectedDocument : undefined;
     
     return (
       <QuizResults

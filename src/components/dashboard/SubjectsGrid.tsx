@@ -17,7 +17,7 @@ interface Subject {
 interface SubjectsGridProps {
   subjects: Subject[];
   isLoading: boolean;
-  onStartQuiz: (subjectId: string) => void;
+  onStartQuiz: (subjectId: string, documentId?: string) => void;
   onStartMegaQuiz: (subjectId: string) => void;
   onUpload: () => void;
 }
@@ -62,7 +62,7 @@ const SubjectsGrid = ({ subjects, isLoading, onStartQuiz, onStartMegaQuiz, onUpl
         <SubjectCard
           key={subject.id}
           subject={subject}
-          onStartQuiz={() => onStartQuiz(subject.id)}
+          onStartQuiz={(documentId) => onStartQuiz(subject.id, documentId)}
           onStartMegaQuiz={() => onStartMegaQuiz(subject.id)}
         />
       ))}

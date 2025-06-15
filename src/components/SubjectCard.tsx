@@ -1,11 +1,12 @@
-
-import { FileText, Target, Calendar, ArrowRight, Trash2, Play } from 'lucide-react';
+import { FileText, Target, Calendar, ArrowRight, Trash2, Play, ChevronDown } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useSubjects } from '@/hooks/useSubjects';
 import { useToast } from '@/hooks/use-toast';
+import { useDocuments } from '@/hooks/useDocuments';
 import { useState } from 'react';
 
 interface Subject {
@@ -20,14 +21,18 @@ interface Subject {
 
 interface SubjectCardProps {
   subject: Subject;
-  onStartQuiz: () => void;
+  onStartQuiz: (documentId?: string) => void;
   onStartMegaQuiz?: () => void;
 }
 
 const SubjectCard = ({ subject, onStartQuiz, onStartMegaQuiz }: SubjectCardProps) => {
   const [isDeleting, setIsDeleting] = useState(false);
   const { deleteSubject } = useSubjects();
+  const { documents } = useDocuments();
   const { toast } = useToast();
+
+  // Get documents for this subject
+  const subjectDocuments = documents.filter(doc => doc.subject_id === subject.id);
 
   const handleDelete = async () => {
     try {
@@ -60,6 +65,16 @@ const SubjectCard = ({ subject, onStartQuiz, onStartMegaQuiz }: SubjectCardProps
     return 'bg-red-500';
   };
 
+  const handleQuizStart = () => {
+    if (subjectDocuments.length === 1) {
+      // If only one quiz, start it directly
+      onStartQuiz(subjectDocuments[0].id);
+    } else {
+      // If multiple quizzes, let parent component handle quiz selection
+      onStartQuiz();
+    }
+  };
+
   return (
     <Card className="group hover:shadow-lg transition-all duration-300 hover:-translate-y-1 border-2 hover:border-blue-200">
       <CardContent className="p-6">
@@ -72,7 +87,7 @@ const SubjectCard = ({ subject, onStartQuiz, onStartMegaQuiz }: SubjectCardProps
           </div>
           <div className="flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
             <Button
-              onClick={onStartQuiz}
+              onClick={handleQuizStart}
               size="sm"
               variant="ghost"
             >
@@ -146,13 +161,48 @@ const SubjectCard = ({ subject, onStartQuiz, onStartMegaQuiz }: SubjectCardProps
         </div>
 
         <div className="flex space-x-2 mt-4">
-          <Button
-            onClick={onStartQuiz}
-            className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-          >
-            <ArrowRight className="mr-2 h-4 w-4" />
-            Start Quiz
-          </Button>
+          {subjectDocuments.length === 1 ? (
+            <Button
+              onClick={handleQuizStart}
+              className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+            >
+              <ArrowRight className="mr-2 h-4 w-4" />
+              Start Quiz
+            </Button>
+          ) : subjectDocuments.length > 1 ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                >
+                  <ArrowRight className="mr-2 h-4 w-4" />
+                  Choose Quiz
+                  <ChevronDown className="ml-2 h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-64 bg-white">
+                {subjectDocuments.map((doc) => (
+                  <DropdownMenuItem
+                    key={doc.id}
+                    onClick={() => onStartQuiz(doc.id)}
+                    className="cursor-pointer hover:bg-gray-100"
+                  >
+                    <FileText className="mr-2 h-4 w-4" />
+                    {doc.name}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <Button
+              disabled
+              className="flex-1 bg-gray-400"
+            >
+              <ArrowRight className="mr-2 h-4 w-4" />
+              No Quizzes
+            </Button>
+          )}
+          
           {subject.documentCount > 1 && (
             <Button
               onClick={onStartMegaQuiz}
