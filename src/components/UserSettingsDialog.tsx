@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { Settings, Sun, Moon, Monitor, Trash2, Mail, Lock, Bell } from 'lucide-react';
+import { Settings, Sun, Moon, Monitor, Trash2, Mail, Lock, Bell, UserX } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { Button } from '@/components/ui/button';
 import {
@@ -41,7 +41,7 @@ const UserSettingsDialog = ({ trigger, open, onOpenChange }: UserSettingsDialogP
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   
-  const { settings, updateSettings, isUpdating, deleteAllUserData, isDeletingData } = useUserSettings();
+  const { settings, updateSettings, isUpdating, deleteAllUserData, isDeletingData, deleteEntireAccount, isDeletingAccount } = useUserSettings();
   const { user, updateEmail, updatePassword } = useAuth();
   const { toast } = useToast();
   const { theme, setTheme } = useTheme();
@@ -180,9 +180,28 @@ const UserSettingsDialog = ({ trigger, open, onOpenChange }: UserSettingsDialogP
         description: "All your subjects, documents, and quizzes have been permanently deleted."
       });
     } catch (error) {
+      console.error('Delete all data error:', error);
       toast({
         title: "Error",
-        description: "Failed to delete data. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to delete data. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    try {
+      await deleteEntireAccount();
+      toast({
+        title: "Account deleted",
+        description: "Your account and all data have been permanently deleted."
+      });
+      // User will be automatically signed out
+    } catch (error) {
+      console.error('Delete account error:', error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to delete account. Please try again.",
         variant: "destructive"
       });
     }
@@ -330,6 +349,8 @@ const UserSettingsDialog = ({ trigger, open, onOpenChange }: UserSettingsDialogP
               <Trash2 className="h-4 w-4 text-red-500" />
               <Label className="text-base font-medium text-red-700">Danger Zone</Label>
             </div>
+            
+            {/* Delete Data Section */}
             <div className="bg-red-50 p-4 rounded-lg">
               <h4 className="font-medium text-red-800 mb-2">Delete All Subjects and Quizzes</h4>
               <p className="text-sm text-red-600 mb-3">
@@ -362,6 +383,46 @@ const UserSettingsDialog = ({ trigger, open, onOpenChange }: UserSettingsDialogP
                       className="bg-red-600 hover:bg-red-700"
                     >
                       Yes, delete everything
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
+
+            {/* Delete Account Section */}
+            <div className="bg-red-100 p-4 rounded-lg border-2 border-red-200">
+              <h4 className="font-medium text-red-900 mb-2">Delete Entire Account</h4>
+              <p className="text-sm text-red-700 mb-3">
+                This will permanently delete your account and all associated data. You will be immediately signed out and cannot recover your account.
+              </p>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive" size="sm" disabled={isDeletingAccount} className="bg-red-700 hover:bg-red-800">
+                    <UserX className="mr-2 h-4 w-4" />
+                    {isDeletingAccount ? 'Deleting Account...' : 'Delete My Account'}
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete your account permanently?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This is the most destructive action possible. This will:
+                      <ul className="list-disc list-inside mt-2 space-y-1 text-red-700">
+                        <li><strong>Delete your account permanently</strong></li>
+                        <li><strong>Delete all your data</strong></li>
+                        <li><strong>Sign you out immediately</strong></li>
+                        <li><strong>Make recovery impossible</strong></li>
+                      </ul>
+                      <p className="mt-2 font-semibold">This action cannot be undone!</p>
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={handleDeleteAccount}
+                      className="bg-red-700 hover:bg-red-800"
+                    >
+                      Yes, delete my account forever
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>

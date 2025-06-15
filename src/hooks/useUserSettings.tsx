@@ -126,68 +126,85 @@ export const useUserSettings = () => {
 
       console.log('Deleting all user data for user:', user.id);
 
-      // Delete in correct order to respect foreign key constraints
-      // 1. First delete question_results (no dependencies)
-      console.log('Deleting question_results...');
-      const { error: questionResultsError } = await supabase
-        .from('question_results')
-        .delete()
-        .eq('user_id', user.id);
+      try {
+        // Delete in correct order to respect foreign key constraints
+        // 1. First delete question_results (no foreign key dependencies)
+        console.log('Deleting question_results...');
+        const { error: questionResultsError } = await supabase
+          .from('question_results')
+          .delete()
+          .eq('user_id', user.id);
 
-      if (questionResultsError) {
-        console.error('Error deleting question_results:', questionResultsError);
-        throw questionResultsError;
+        if (questionResultsError) {
+          console.error('Error deleting question_results:', questionResultsError);
+          throw new Error(`Failed to delete question results: ${questionResultsError.message}`);
+        }
+
+        // 2. Then delete quiz_attempts
+        console.log('Deleting quiz_attempts...');
+        const { error: attemptsError } = await supabase
+          .from('quiz_attempts')
+          .delete()
+          .eq('user_id', user.id);
+
+        if (attemptsError) {
+          console.error('Error deleting quiz_attempts:', attemptsError);
+          throw new Error(`Failed to delete quiz attempts: ${attemptsError.message}`);
+        }
+
+        // 3. Then delete questions
+        console.log('Deleting questions...');
+        const { error: questionsError } = await supabase
+          .from('questions')
+          .delete()
+          .eq('user_id', user.id);
+
+        if (questionsError) {
+          console.error('Error deleting questions:', questionsError);
+          throw new Error(`Failed to delete questions: ${questionsError.message}`);
+        }
+
+        // 4. Then delete documents
+        console.log('Deleting documents...');
+        const { error: documentsError } = await supabase
+          .from('documents')
+          .delete()
+          .eq('user_id', user.id);
+
+        if (documentsError) {
+          console.error('Error deleting documents:', documentsError);
+          throw new Error(`Failed to delete documents: ${documentsError.message}`);
+        }
+
+        // 5. Then delete subjects
+        console.log('Deleting subjects...');
+        const { error: subjectsError } = await supabase
+          .from('subjects')
+          .delete()
+          .eq('user_id', user.id);
+
+        if (subjectsError) {
+          console.error('Error deleting subjects:', subjectsError);
+          throw new Error(`Failed to delete subjects: ${subjectsError.message}`);
+        }
+
+        // 6. Finally delete user_settings
+        console.log('Deleting user_settings...');
+        const { error: settingsError } = await supabase
+          .from('user_settings')
+          .delete()
+          .eq('user_id', user.id);
+
+        if (settingsError) {
+          console.error('Error deleting user_settings:', settingsError);
+          throw new Error(`Failed to delete user settings: ${settingsError.message}`);
+        }
+
+        console.log('All user data deleted successfully');
+      } catch (error) {
+        console.error('Error in deleteAllUserData:', error);
+        throw error;
       }
-
-      // 2. Then delete quiz_attempts (references question_results)
-      console.log('Deleting quiz_attempts...');
-      const { error: attemptsError } = await supabase
-        .from('quiz_attempts')
-        .delete()
-        .eq('user_id', user.id);
-
-      if (attemptsError) {
-        console.error('Error deleting quiz_attempts:', attemptsError);
-        throw attemptsError;
-      }
-
-      // 3. Then delete questions (might reference documents and subjects)
-      console.log('Deleting questions...');
-      const { error: questionsError } = await supabase
-        .from('questions')
-        .delete()
-        .eq('user_id', user.id);
-
-      if (questionsError) {
-        console.error('Error deleting questions:', questionsError);
-        throw questionsError;
-      }
-
-      // 4. Then delete documents (might be referenced by questions)
-      console.log('Deleting documents...');
-      const { error: documentsError } = await supabase
-        .from('documents')
-        .delete()
-        .eq('user_id', user.id);
-
-      if (documentsError) {
-        console.error('Error deleting documents:', documentsError);
-        throw documentsError;
-      }
-
-      // 5. Finally delete subjects (might be referenced by documents and questions)
-      console.log('Deleting subjects...');
-      const { error: subjectsError } = await supabase
-        .from('subjects')
-        .delete()
-        .eq('user_id', user.id);
-
-      if (subjectsError) {
-        console.error('Error deleting subjects:', subjectsError);
-        throw subjectsError;
-      }
-
-      console.log('All user data deleted successfully');
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['subjects'] });
@@ -195,6 +212,40 @@ export const useUserSettings = () => {
       queryClient.invalidateQueries({ queryKey: ['questions'] });
       queryClient.invalidateQueries({ queryKey: ['quiz-attempts'] });
       queryClient.invalidateQueries({ queryKey: ['question-results'] });
+      queryClient.invalidateQueries({ queryKey: ['user-settings'] });
+    }
+  });
+
+  const deleteEntireAccount = useMutation({
+    mutationFn: async () => {
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
+      console.log('Deleting entire account for user:', user.id);
+
+      try {
+        // First delete all user data (same as deleteAllUserData)
+        await deleteAllUserData.mutateAsync();
+
+        // Then delete the user account itself
+        console.log('Deleting user account...');
+        const { error: deleteUserError } = await supabase.auth.admin.deleteUser(user.id);
+
+        if (deleteUserError) {
+          console.error('Error deleting user account:', deleteUserError);
+          throw new Error(`Failed to delete account: ${deleteUserError.message}`);
+        }
+
+        console.log('Account deleted successfully');
+      } catch (error) {
+        console.error('Error in deleteEntireAccount:', error);
+        throw error;
+      }
+    },
+    onSuccess: () => {
+      // Clear all queries since user is deleted
+      queryClient.clear();
     }
   });
 
@@ -205,6 +256,8 @@ export const useUserSettings = () => {
     updateSettings: updateSettings.mutateAsync,
     isUpdating: updateSettings.isPending,
     deleteAllUserData: deleteAllUserData.mutateAsync,
-    isDeletingData: deleteAllUserData.isPending
+    isDeletingData: deleteAllUserData.isPending,
+    deleteEntireAccount: deleteEntireAccount.mutateAsync,
+    isDeletingAccount: deleteEntireAccount.isPending
   };
 };
