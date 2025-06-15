@@ -1,11 +1,11 @@
-
 import { useState } from 'react';
-import { Upload, FileText, BookOpen, Trophy, Plus, ArrowRight, BarChart3, Clock, Target, Settings } from 'lucide-react';
+import { Upload, FileText, BookOpen, Trophy, Plus, ArrowRight, BarChart3, Clock, Target, Settings, FolderOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Header from '@/components/Header';
 import SubjectCard from '@/components/SubjectCard';
 import DocumentUpload from '@/components/DocumentUpload';
+import DocumentManager from '@/components/DocumentManager';
 import QuizInterface from '@/components/QuizInterface';
 import AddSubjectDialog from '@/components/AddSubjectDialog';
 import UserSettingsDialog from '@/components/UserSettingsDialog';
@@ -13,7 +13,7 @@ import { useSubjects } from '@/hooks/useSubjects';
 import { useUserSettings } from '@/hooks/useUserSettings';
 
 const Index = () => {
-  const [activeView, setActiveView] = useState<'dashboard' | 'upload' | 'quiz'>('dashboard');
+  const [activeView, setActiveView] = useState<'dashboard' | 'upload' | 'quiz' | 'documents'>('dashboard');
   const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
   
   const { subjects, isLoading } = useSubjects();
@@ -123,6 +123,14 @@ const Index = () => {
           <BarChart3 className="mr-2 h-4 w-4" />
           Take Quiz
         </Button>
+        <Button 
+          variant="outline"
+          onClick={() => setActiveView('documents')}
+          className="border-2 border-purple-200 hover:bg-purple-50"
+        >
+          <FolderOpen className="mr-2 h-4 w-4" />
+          Manage Documents
+        </Button>
         <UserSettingsDialog 
           trigger={
             <Button variant="outline">
@@ -209,6 +217,11 @@ const Index = () => {
         {activeView === 'upload' && (
           <DocumentUpload 
             subjects={subjects}
+            onBack={() => setActiveView('dashboard')}
+          />
+        )}
+        {activeView === 'documents' && (
+          <DocumentManager
             onBack={() => setActiveView('dashboard')}
           />
         )}

@@ -19,6 +19,23 @@ export const useDocuments = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
+  const documentsQuery = useQuery({
+    queryKey: ['documents'],
+    queryFn: async () => {
+      if (!user) return [];
+      
+      const { data, error } = await supabase
+        .from('documents')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('upload_date', { ascending: false });
+
+      if (error) throw error;
+      return data as Document[];
+    },
+    enabled: !!user
+  });
+
   const uploadDocument = useMutation({
     mutationFn: async ({ 
       file, 
@@ -52,8 +69,41 @@ export const useDocuments = () => {
     }
   });
 
+  const deleteDocument = useMutation({
+    mutationFn: async (documentId: string) => {
+      if (!user) throw new Error('User not authenticated');
+
+      // First delete all questions associated with this document
+      const { error: questionsError } = await supabase
+        .from('questions')
+        .delete()
+        .eq('document_id', documentId)
+        .eq('user_id', user.id);
+
+      if (questionsError) throw questionsError;
+
+      // Then delete the document itself
+      const { error: documentError } = await supabase
+        .from('documents')
+        .delete()
+        .eq('id', documentId)
+        .eq('user_id', user.id);
+
+      if (documentError) throw documentError;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['documents'] });
+      queryClient.invalidateQueries({ queryKey: ['subjects'] });
+      queryClient.invalidateQueries({ queryKey: ['questions'] });
+    }
+  });
+
   return {
+    documents: documentsQuery.data || [],
+    isLoading: documentsQuery.isLoading,
     uploadDocument: uploadDocument.mutateAsync,
-    isUploading: uploadDocument.isPending
+    isUploading: uploadDocument.isPending,
+    deleteDocument: deleteDocument.mutateAsync,
+    isDeleting: deleteDocument.isPending
   };
 };
