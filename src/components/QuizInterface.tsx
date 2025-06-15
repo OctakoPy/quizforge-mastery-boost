@@ -34,6 +34,14 @@ const QuizInterface = ({ subjects, selectedSubject, onBack }: QuizInterfaceProps
   const subject = selectedSubject ? subjects.find(s => s.id === selectedSubject) : subjects[0];
   const { questions, isLoading } = useQuestions(selectedSubject || undefined);
 
+  // Helper function to safely convert options to string array
+  const getOptionsAsStrings = (options: any): string[] => {
+    if (Array.isArray(options)) {
+      return options.map(option => String(option));
+    }
+    return [];
+  };
+
   const handleAnswerSelect = (value: string) => {
     setSelectedAnswer(value);
   };
@@ -194,8 +202,7 @@ const QuizInterface = ({ subjects, selectedSubject, onBack }: QuizInterfaceProps
               {questions.map((question, index) => {
                 const userAnswer = userAnswers[index];
                 const isCorrect = userAnswer === question.correct_answer;
-                // Safely handle options - ensure it's an array
-                const options = Array.isArray(question.options) ? question.options : [];
+                const options = getOptionsAsStrings(question.options);
                 
                 return (
                   <div key={question.id} className="border rounded-lg p-4">
@@ -238,8 +245,7 @@ const QuizInterface = ({ subjects, selectedSubject, onBack }: QuizInterfaceProps
 
   const currentQuestion = questions[currentQuestionIndex];
   const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
-  // Safely handle options - ensure it's an array
-  const currentOptions = Array.isArray(currentQuestion.options) ? currentQuestion.options : [];
+  const currentOptions = getOptionsAsStrings(currentQuestion.options);
 
   return (
     <div className="max-w-2xl mx-auto">
