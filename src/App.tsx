@@ -11,7 +11,15 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: true,
+      staleTime: 1000 * 60 * 10
+    }
+  }
+});
+
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
