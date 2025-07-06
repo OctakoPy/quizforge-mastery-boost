@@ -165,6 +165,50 @@ const DocumentUpload = ({ subjects, onBack }: DocumentUploadProps) => {
           </CardContent>
         </Card>
 
+        <Card className="border-purple-200 bg-purple-50">
+          <CardContent className="p-4">
+            <h3 className="font-medium text-purple-800 mb-2">How to Generate Questions</h3>
+            <div className="text-sm text-purple-700 space-y-2">
+              <ul className="list-disc list-inside space-y-1">
+                <li>Copy the prompt using the button below</li>
+                <li>Paste the prompt into ChatGPT and also upload the lecture slides file to ChatGPT</li>
+                <li>Wait for the response in markdown format</li>
+                <li>Copy the markdown content</li>
+                <li>Paste it into a new <code>.txt</code> file</li>
+                <li>Name the file appropriately</li>
+                <li>Upload it using the uploader above</li>
+              </ul>
+                <Button
+                  onClick={() => {
+                    navigator.clipboard.writeText(
+                `create 20 mcq questions based on the lecture, making sure to cover every aspect taught, do not repeat questions in similar ways, but aim to cover all material except practical concepts (focusing on the theoretical ones more)
+                
+                Format each question exactly like this:
+                /// 
+                [Question: "What is 10+10?"]
+                [A: "20"]
+                [B: "15"] 
+                [C: "10"]
+                [D: "90"]
+                [Solution: "A"]
+                ///
+                
+                And give all the questions in a markdown box for me to easily copy and paste out.`
+                    );
+                    toast({
+                      title: "Prompt copied!",
+                      description: "You can now paste it into ChatGPT.",
+                    });
+                  }}
+                  variant="secondary"
+                  className="mt-3"
+                >
+                  Copy Prompt
+                </Button>
+            </div>
+          </CardContent>
+        </Card>
+
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center">
