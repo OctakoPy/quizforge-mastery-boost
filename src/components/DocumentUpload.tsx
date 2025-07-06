@@ -176,7 +176,7 @@ const DocumentUpload = ({ subjects, onBack }: DocumentUploadProps) => {
                 <li>Copy the markdown content</li>
                 <li>Paste it into a new <code>.txt</code> file</li>
                 <li>Name the file appropriately</li>
-                <li>Upload it using the uploader above</li>
+                <li>Upload it using the uploader below!</li>
               </ul>
                 <Button
                   onClick={() => {
