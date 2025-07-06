@@ -184,12 +184,22 @@ const DocumentUpload = ({ subjects, onBack }: DocumentUploadProps) => {
                 `create 20 mcq questions based on the lecture, making sure to cover every aspect taught, do not repeat questions in similar ways, but aim to cover all material except practical concepts (focusing on the theoretical ones more)
                 
                 Format each question exactly like this:
+                
                 /// 
                 [Question: "What is 10+10?"]
                 [A: "20"]
                 [B: "15"] 
                 [C: "10"]
                 [D: "90"]
+                [Solution: "A"]
+                ///
+
+                /// 
+                [Question: "What is 1+1?"]
+                [A: "2"]
+                [B: "3"] 
+                [C: "4"]
+                [D: "10"]
                 [Solution: "A"]
                 ///
                 
